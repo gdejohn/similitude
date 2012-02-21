@@ -19,6 +19,13 @@ public class Cloner
 	 */
 	public <T> T toClone(T original)
 	{
-		throw new UnsupportedOperationException( );
+		if (original == null)
+		{
+			return null;
+		}
+		else
+		{
+			throw new IllegalArgumentException( );
+		}
 	}
 }
