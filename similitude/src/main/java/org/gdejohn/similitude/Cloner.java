@@ -3,6 +3,10 @@
  */
 package org.gdejohn.similitude;
 
+import static java.lang.reflect.Array.get;
+import static java.lang.reflect.Array.set;
+
+import java.lang.reflect.Array;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -19,6 +23,18 @@ public class Cloner
 	private final Set<Class<?>> IMMUTABLE = new LinkedHashSet<Class<?>>( );
 	
 	/**
+	 * Registers a given class as immutable, so that it will be shallow-copied.
+	 * 
+	 * @param CLASS The class to register as immutable.
+	 * 
+	 * @return {@code true} if {@code CLASS} wasn't already registered.
+	 */
+	public boolean register(final Class<?> CLASS)
+	{
+		return IMMUTABLE.add(CLASS);
+	}
+	
+	/**
 	 * Resets {@link #IMMUTABLE} to default values.
 	 * 
 	 * After this method returns, {@code IMMUTABLE} will contain the primitive
@@ -29,41 +45,29 @@ public class Cloner
 	{
 		IMMUTABLE.clear( );
 		
-		IMMUTABLE.add(byte.class);
-		IMMUTABLE.add(short.class);
-		IMMUTABLE.add(int.class);
-		IMMUTABLE.add(long.class);
-		IMMUTABLE.add(float.class);
-		IMMUTABLE.add(double.class);
-		IMMUTABLE.add(char.class);
-		IMMUTABLE.add(boolean.class);
+		this.register(byte.class);
+		this.register(short.class);
+		this.register(int.class);
+		this.register(long.class);
+		this.register(float.class);
+		this.register(double.class);
+		this.register(char.class);
+		this.register(boolean.class);
 		
-		IMMUTABLE.add(Byte.class);
-		IMMUTABLE.add(Short.class);
-		IMMUTABLE.add(Integer.class);
-		IMMUTABLE.add(Long.class);
-		IMMUTABLE.add(Float.class);
-		IMMUTABLE.add(Double.class);
-		IMMUTABLE.add(Character.class);
-		IMMUTABLE.add(Boolean.class);
+		this.register(Byte.class);
+		this.register(Short.class);
+		this.register(Integer.class);
+		this.register(Long.class);
+		this.register(Float.class);
+		this.register(Double.class);
+		this.register(Character.class);
+		this.register(Boolean.class);
 		
-		IMMUTABLE.add(String.class);
+		this.register(String.class);
 	}
 	
 	{ // Instance initializer, executes at the beginning of every constructor.
 		this.reset( );
-	}
-	
-	/**
-	 * Registers a given class as immutable, so that it will be shallow-copied.
-	 * 
-	 * @param CLASS The class to register as immutable.
-	 * 
-	 * @return {@code true} if {@code CLASS} wasn't already registered.
-	 */
-	public boolean register(final Class<?> CLASS)
-	{
-		return IMMUTABLE.add(CLASS);
 	}
 	
 	/**
@@ -83,11 +87,25 @@ public class Cloner
 		}
 		else
 		{
-			final Class<?> CLASS = ORIGINAL.getClass( );
+			// This will always work, since ORIGINAL is of type T.
+			@SuppressWarnings("unchecked")
+			final Class<T> CLASS = (Class<T>)ORIGINAL.getClass( );
 			
 			if (CLASS.isEnum( ) || IMMUTABLE.contains(CLASS))
 			{ // Safe to shallow-copy.
 				CLONE = ORIGINAL;
+			}
+			else if (CLASS.isArray( ))
+			{ // Recursively clone each element.
+				final int LENGTH = Array.getLength(ORIGINAL);
+				final Class<?> COMPONENT_TYPE = CLASS.getComponentType( );
+				
+				CLONE = CLASS.cast(Array.newInstance(COMPONENT_TYPE, LENGTH));
+				
+				for (int index = 0; index < LENGTH; index++)
+				{ // Clone element at index in ORIGINAL, set at index in CLONE.
+					set(CLONE, index, this.toClone(get(ORIGINAL, index)));
+				}
 			}
 			else
 			{

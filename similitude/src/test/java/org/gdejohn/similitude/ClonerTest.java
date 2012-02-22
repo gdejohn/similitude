@@ -6,12 +6,12 @@ import org.testng.annotations.Test;
 
 public class ClonerTest
 {
-	enum Enum
+	public enum Enum
 	{
 		CONSTANT
 	}
 	
-	static final class Immutable
+	public static final class Immutable
 	{
 		private final String field;
 		
@@ -61,65 +61,73 @@ public class ClonerTest
 	@Test
 	public void testByte( )
 	{
-		byte clone = new Cloner( ).toClone(BYTE);
+		byte original = BYTE;
+		byte clone = new Cloner( ).toClone(original);
 		
-		assertEquals(BYTE, clone);
+		assertEquals(clone, original);
 	}
 	
 	@Test
 	public void testShort( )
 	{
-		short clone = new Cloner( ).toClone(SHORT);
+		short original = SHORT;
+		short clone = new Cloner( ).toClone(original);
 		
-		assertEquals(SHORT, clone);
+		assertEquals(clone, original);
 	}
 	
 	@Test
 	public void testInt( )
 	{
-		int clone = new Cloner( ).toClone(INT);
+		int original = INT;
+		int clone = new Cloner( ).toClone(original);
 		
-		assertEquals(INT, clone);
+		assertEquals(clone, original);
 	}
 	
 	@Test
 	public void testLong( )
 	{
-		long clone = new Cloner( ).toClone(LONG);
+		long original = LONG;
+		long clone = new Cloner( ).toClone(original);
 		
-		assertEquals(LONG, clone);
+		assertEquals(clone, original);
 	}
 	
 	@Test
 	public void testFloat( )
 	{
-		float clone = new Cloner( ).toClone(FLOAT);
+		float original = FLOAT;
+		float clone = new Cloner( ).toClone(original);
 		
-		assertEquals(FLOAT, clone, 0f);
+		assertEquals(clone, original, 0f);
 	}
 	
 	@Test
 	public void testDouble( )
 	{
-		double clone = new Cloner( ).toClone(DOUBLE);
+		double original = DOUBLE;
+		double clone = new Cloner( ).toClone(original);
 		
-		assertEquals(DOUBLE, clone, 0d);
+		assertEquals(clone, original, 0d);
 	}
 	
 	@Test
 	public void testChar( )
 	{
-		char clone = new Cloner( ).toClone(CHAR);
+		char original = CHAR;
+		char clone = new Cloner( ).toClone(original);
 		
-		assertEquals(CHAR, clone);
+		assertEquals(clone, original);
 	}
 	
 	@Test
 	public void testBoolean( )
 	{
-		boolean clone = new Cloner( ).toClone(BOOLEAN);
+		boolean original = BOOLEAN;
+		boolean clone = new Cloner( ).toClone(original);
 		
-		assertEquals(BOOLEAN, clone);
+		assertEquals(clone, original);
 	}
 	
 	@Test
@@ -128,7 +136,8 @@ public class ClonerTest
 		Byte original = Byte.valueOf(BYTE);
 		Byte clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
 	}
 	
 	@Test
@@ -137,7 +146,8 @@ public class ClonerTest
 		Short original = Short.valueOf(SHORT);
 		Short clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
 	}
 	
 	@Test
@@ -146,7 +156,8 @@ public class ClonerTest
 		Integer original = Integer.valueOf(INT);
 		Integer clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
 	}
 	
 	@Test
@@ -155,7 +166,8 @@ public class ClonerTest
 		Long original = Long.valueOf(LONG);
 		Long clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
 	}
 	
 	@Test
@@ -164,7 +176,8 @@ public class ClonerTest
 		Float original = Float.valueOf(FLOAT);
 		Float clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone, 0f);
+		assertSame(clone, original);
+		assertEquals(clone, original, 0f);
 	}
 	
 	@Test
@@ -173,7 +186,8 @@ public class ClonerTest
 		Double original = Double.valueOf(DOUBLE);
 		Double clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone, 0d);
+		assertSame(clone, original);
+		assertEquals(clone, original, 0d);
 	}
 	
 	@Test
@@ -182,7 +196,8 @@ public class ClonerTest
 		Character original = Character.valueOf(CHAR);
 		Character clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
 	}
 	
 	@Test
@@ -191,15 +206,18 @@ public class ClonerTest
 		Boolean original = Boolean.valueOf(BOOLEAN);
 		Boolean clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
 	}
 	
 	@Test
 	public void testString( )
 	{
-		String clone = new Cloner( ).toClone(STRING);
+		String original = STRING;
+		String clone = new Cloner( ).toClone(original);
 		
-		assertEquals(STRING, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
 	}
 	
 	@Test
@@ -208,7 +226,34 @@ public class ClonerTest
 		Enum original = Enum.CONSTANT;
 		Enum clone = new Cloner( ).toClone(original);
 		
-		assertEquals(original, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
+	}
+	
+	@Test
+	public void testArray( )
+	{
+		byte[ ] original = {0, 1, 2, 3};
+		byte[ ] clone = new Cloner( ).toClone(original);
+		
+		assertNotSame(clone, original);
+		assertEquals(clone, original);
+	}
+	
+	@Test
+	public void testMultidimensionalArray( )
+	{
+		byte[ ][ ] original = {{0, 1}, {2, 3}};
+		byte[ ][ ] clone = new Cloner( ).toClone(original);
+		
+		assertNotSame(clone, original);
+		assertEquals(clone.length, original.length);
+		
+		for (int index = 0; index < original.length; index++)
+		{
+			assertNotSame(clone[index], original[index]);
+			assertEquals(clone[index], original[index]);
+		}
 	}
 	
 	@Test
@@ -254,6 +299,7 @@ public class ClonerTest
 		Immutable original = new Immutable(STRING);
 		Immutable clone = cloner.toClone(original);
 		
-		assertEquals(original, clone);
+		assertSame(clone, original);
+		assertEquals(clone, original);
 	}
 }
