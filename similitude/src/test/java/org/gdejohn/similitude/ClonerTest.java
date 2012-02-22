@@ -1,7 +1,6 @@
 package org.gdejohn.similitude;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.*;
 
 import org.testng.annotations.Test;
 
@@ -10,6 +9,29 @@ public class ClonerTest
 	enum Enum
 	{
 		CONSTANT
+	}
+	
+	static final class Immutable
+	{
+		private final String field;
+		
+		public Immutable(String argument)
+		{
+			field = argument;
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof Immutable)
+			{
+				return this.field.equals(((Immutable)that).field);
+			}
+			else
+			{
+				return false;
+			}
+		}
 	}
 	
 	private final byte BYTE = (byte)42;
@@ -27,6 +49,8 @@ public class ClonerTest
 	private final char CHAR = '\u0042';
 	
 	private final boolean BOOLEAN = true;
+	
+	private final String STRING = "xyzzy";
 	
 	@Test
 	public void testNull( )
@@ -173,10 +197,9 @@ public class ClonerTest
 	@Test
 	public void testString( )
 	{
-		String original = "xyzzy";
-		String clone = new Cloner( ).toClone(original);
+		String clone = new Cloner( ).toClone(STRING);
 		
-		assertEquals(original, clone);
+		assertEquals(STRING, clone);
 	}
 	
 	@Test
@@ -184,6 +207,52 @@ public class ClonerTest
 	{
 		Enum original = Enum.CONSTANT;
 		Enum clone = new Cloner( ).toClone(original);
+		
+		assertEquals(original, clone);
+	}
+	
+	@Test
+	public void testRegister( )
+	{
+		Cloner cloner = new Cloner( );
+		
+		assertTrue(cloner.register(Immutable.class));
+	}
+	
+	@Test
+	public void testReregister( )
+	{
+		Cloner cloner = new Cloner( );
+		cloner.register(Immutable.class);
+		
+		assertFalse(cloner.register(Immutable.class));
+	}
+	
+	@Test
+	public void testRegisterDefault( )
+	{
+		Cloner cloner = new Cloner( );
+		
+		assertFalse(cloner.register(String.class));
+	}
+	
+	@Test
+	public void testReset( )
+	{
+		Cloner cloner = new Cloner( );
+		cloner.register(Immutable.class);
+		cloner.reset( );
+		
+		assertTrue(cloner.register(Immutable.class));
+	}
+	
+	@Test
+	public void testImmutable( )
+	{
+		Cloner cloner = new Cloner( );
+		cloner.register(Immutable.class);
+		Immutable original = new Immutable(STRING);
+		Immutable clone = cloner.toClone(original);
 		
 		assertEquals(original, clone);
 	}

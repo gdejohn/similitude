@@ -13,10 +13,21 @@ import java.util.Set;
  */
 public class Cloner
 {
-	private final Set<Class<?>> IMMUTABLE;
+	/**
+	 * Immutable types, can be shallow-copied.
+	 */
+	private final Set<Class<?>> IMMUTABLE = new LinkedHashSet<Class<?>>( );
 	
+	/**
+	 * Resets {@link #IMMUTABLE} to default values.
+	 * 
+	 * After this method returns, {@code IMMUTABLE} will contain the primitive
+	 * types, their respective wrappers, and {@code String}. Any other values
+	 * that were previously added by the user are removed.
+	 */
+	public void reset( )
 	{
-		IMMUTABLE = new LinkedHashSet<Class<?>>( );
+		IMMUTABLE.clear( );
 		
 		IMMUTABLE.add(byte.class);
 		IMMUTABLE.add(short.class);
@@ -39,6 +50,22 @@ public class Cloner
 		IMMUTABLE.add(String.class);
 	}
 	
+	{ // Instance initializer, executes at the beginning of every constructor.
+		this.reset( );
+	}
+	
+	/**
+	 * Registers a given class as immutable, so that it will be shallow-copied.
+	 * 
+	 * @param CLASS The class to register as immutable.
+	 * 
+	 * @return {@code true} if {@code CLASS} wasn't already registered.
+	 */
+	public boolean register(final Class<?> CLASS)
+	{
+		return IMMUTABLE.add(CLASS);
+	}
+	
 	/**
 	 * Creates a deep copy of the given object.
 	 * 
@@ -59,7 +86,7 @@ public class Cloner
 			final Class<?> CLASS = ORIGINAL.getClass( );
 			
 			if (CLASS.isEnum( ) || IMMUTABLE.contains(CLASS))
-			{
+			{ // Safe to shallow-copy.
 				CLONE = ORIGINAL;
 			}
 			else
