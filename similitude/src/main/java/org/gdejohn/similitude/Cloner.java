@@ -3,20 +3,29 @@
  */
 package org.gdejohn.similitude;
 
+import static java.lang.reflect.AccessibleObject.setAccessible;
 import static java.lang.reflect.Array.get;
+import static java.lang.reflect.Array.getLength;
+import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Array.set;
+import static java.lang.reflect.Modifier.isStatic;
 
-import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Deep copying instances of arbitrary classes.
+ * Deep copy instances of arbitrary classes.
  * 
  * @author Griffin DeJohn
  */
 public class Cloner
 {
+	/**
+	 * Instantiates classes that need to be deep copied.
+	 */
+	private final Builder BUILDER = new Builder( );
+	
 	/**
 	 * Immutable types, can be shallow-copied.
 	 */
@@ -76,6 +85,9 @@ public class Cloner
 	 * @param original The object to create a deep copy of.
 	 * 
 	 * @return A deep copy of {@code original}.
+	 * 
+	 * @throws IllegalAccessException 
+	 * @throws InstantiationException 
 	 */
 	public <T> T toClone(final T ORIGINAL)
 	{
@@ -92,15 +104,15 @@ public class Cloner
 			final Class<T> CLASS = (Class<T>)ORIGINAL.getClass( );
 			
 			if (CLASS.isEnum( ) || IMMUTABLE.contains(CLASS))
-			{ // Safe to shallow-copy.
+			{ // Base case, safe to shallow-copy.
 				CLONE = ORIGINAL;
 			}
 			else if (CLASS.isArray( ))
-			{ // Recursively clone each element.
-				final int LENGTH = Array.getLength(ORIGINAL);
+			{ // Clone each element into new array.
+				final int LENGTH = getLength(ORIGINAL);
 				final Class<?> COMPONENT_TYPE = CLASS.getComponentType( );
 				
-				CLONE = CLASS.cast(Array.newInstance(COMPONENT_TYPE, LENGTH));
+				CLONE = CLASS.cast(newInstance(COMPONENT_TYPE, LENGTH));
 				
 				for (int index = 0; index < LENGTH; index++)
 				{ // Clone element at index in ORIGINAL, set at index in CLONE.
@@ -108,8 +120,39 @@ public class Cloner
 				}
 			}
 			else
-			{
-				throw new IllegalArgumentException( );
+			{ // Create new CLASS instance, clone declared and inherited fields.
+				try
+				{
+					CLONE = BUILDER.instantiate(CLASS);
+					
+					Class<? super T> current = CLASS;
+					
+					do
+					{
+						final Field[ ] FIELDS = current.getDeclaredFields( );
+						
+						setAccessible(FIELDS, true);
+						
+						for (final Field FIELD : FIELDS)
+						{
+							if (isStatic(FIELD.getModifiers( )))
+							{ // If static, ignore and skip to the next one.
+								continue;
+							}
+							else
+							{ // Clone field in ORIGINAL, set result in CLONE.
+								FIELD.set(CLONE, this.toClone(FIELD.get(ORIGINAL)));
+							}
+						}
+						
+						current = current.getSuperclass( );
+					}
+					while (current != null);
+				}
+				catch (IllegalAccessException e)
+				{
+					throw new RuntimeException(e);
+				}
 			}
 		}
 		

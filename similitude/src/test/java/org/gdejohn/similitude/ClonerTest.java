@@ -1,39 +1,16 @@
 package org.gdejohn.similitude;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 import org.testng.annotations.Test;
 
 public class ClonerTest
 {
-	public enum Enum
-	{
-		CONSTANT
-	}
-	
-	public static final class Immutable
-	{
-		private final String field;
-		
-		public Immutable(String argument)
-		{
-			field = argument;
-		}
-		
-		@Override
-		public boolean equals(Object that)
-		{
-			if (that instanceof Immutable)
-			{
-				return this.field.equals(((Immutable)that).field);
-			}
-			else
-			{
-				return false;
-			}
-		}
-	}
-	
 	private final byte BYTE = (byte)42;
 	
 	private final short SHORT = (short)42;
@@ -220,6 +197,11 @@ public class ClonerTest
 		assertEquals(clone, original);
 	}
 	
+	public enum Enum
+	{
+		CONSTANT
+	}
+	
 	@Test
 	public void testEnum( )
 	{
@@ -253,6 +235,29 @@ public class ClonerTest
 		{
 			assertNotSame(clone[index], original[index]);
 			assertEquals(clone[index], original[index]);
+		}
+	}
+	
+	public static final class Immutable
+	{
+		private final String field;
+		
+		public Immutable(String argument)
+		{
+			this.field = argument;
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof Immutable)
+			{
+				return this.field.equals(((Immutable)that).field);
+			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 	
@@ -300,6 +305,81 @@ public class ClonerTest
 		Immutable clone = cloner.toClone(original);
 		
 		assertSame(clone, original);
+		assertEquals(clone, original);
+	}
+	
+	public static class NoArgs
+	{
+		public String field;
+		
+		public NoArgs( )
+		{
+			this.field = "";
+		}
+		
+		public NoArgs(String arg)
+		{
+			this.field = arg;
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof NoArgs)
+			{
+				return this.field.equals(((NoArgs)that).field);
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	
+	@Test
+	public void testNullaryConstructor( )
+	{
+		NoArgs original = new NoArgs(STRING);
+		NoArgs clone = new Cloner( ).toClone(original);
+		
+		assertNotSame(clone, original);
+		assertEquals(clone, original);
+	}
+	
+	public static class Subclass extends NoArgs
+	{
+		public Subclass( )
+		{
+			this.field = "";
+		}
+		
+		public Subclass(String arg)
+		{
+			this.field = arg;
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof Subclass)
+			{
+				return this.field.equals(((Subclass)that).field);
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	
+	@Test
+	public void testInheritedField( )
+	{
+		Subclass original = new Subclass(STRING);
+		Subclass clone = new Cloner( ).toClone(original);
+		
+		assertSame(clone.field, original.field);
+		assertNotSame(clone, original);
 		assertEquals(clone, original);
 	}
 }
