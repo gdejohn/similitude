@@ -7,27 +7,20 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 public class ClonerTest
 {
-	private final byte BYTE = (byte)42;
+	static final Logger ROOT_LOGGER = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 	
-	private final short SHORT = (short)42;
-	
-	private final int INT = 42;
-	
-	private final long LONG = 42l;
-	
-	private final float FLOAT = 42f;
-	
-	private final double DOUBLE = 42d;
-	
-	private final char CHAR = '\u0042';
-	
-	private final boolean BOOLEAN = true;
-	
-	private final String STRING = "xyzzy";
+	static
+	{
+		ROOT_LOGGER.setLevel(Level.WARN);
+	}
 	
 	@Test
 	public void testNull( )
@@ -38,7 +31,7 @@ public class ClonerTest
 	@Test
 	public void testByte( )
 	{
-		byte original = BYTE;
+		byte original = new Builder( ).instantiate(byte.class);
 		byte clone = new Cloner( ).toClone(original);
 		
 		assertEquals(clone, original);
@@ -47,7 +40,7 @@ public class ClonerTest
 	@Test
 	public void testShort( )
 	{
-		short original = SHORT;
+		short original = new Builder( ).instantiate(short.class);
 		short clone = new Cloner( ).toClone(original);
 		
 		assertEquals(clone, original);
@@ -56,7 +49,7 @@ public class ClonerTest
 	@Test
 	public void testInt( )
 	{
-		int original = INT;
+		int original = new Builder( ).instantiate(int.class);
 		int clone = new Cloner( ).toClone(original);
 		
 		assertEquals(clone, original);
@@ -65,7 +58,7 @@ public class ClonerTest
 	@Test
 	public void testLong( )
 	{
-		long original = LONG;
+		long original = new Builder( ).instantiate(long.class);
 		long clone = new Cloner( ).toClone(original);
 		
 		assertEquals(clone, original);
@@ -74,7 +67,7 @@ public class ClonerTest
 	@Test
 	public void testFloat( )
 	{
-		float original = FLOAT;
+		float original = new Builder( ).instantiate(float.class);
 		float clone = new Cloner( ).toClone(original);
 		
 		assertEquals(clone, original, 0f);
@@ -83,7 +76,7 @@ public class ClonerTest
 	@Test
 	public void testDouble( )
 	{
-		double original = DOUBLE;
+		double original = new Builder( ).instantiate(double.class);
 		double clone = new Cloner( ).toClone(original);
 		
 		assertEquals(clone, original, 0d);
@@ -92,7 +85,7 @@ public class ClonerTest
 	@Test
 	public void testChar( )
 	{
-		char original = CHAR;
+		char original = new Builder( ).instantiate(char.class);
 		char clone = new Cloner( ).toClone(original);
 		
 		assertEquals(clone, original);
@@ -101,7 +94,7 @@ public class ClonerTest
 	@Test
 	public void testBoolean( )
 	{
-		boolean original = BOOLEAN;
+		boolean original = new Builder( ).instantiate(boolean.class);
 		boolean clone = new Cloner( ).toClone(original);
 		
 		assertEquals(clone, original);
@@ -110,7 +103,7 @@ public class ClonerTest
 	@Test
 	public void testByteWrapper( )
 	{
-		Byte original = Byte.valueOf(BYTE);
+		Byte original = new Builder( ).instantiate(Byte.class);
 		Byte clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -120,7 +113,7 @@ public class ClonerTest
 	@Test
 	public void testShortWrapper( )
 	{
-		Short original = Short.valueOf(SHORT);
+		Short original = new Builder( ).instantiate(Short.class);
 		Short clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -130,7 +123,7 @@ public class ClonerTest
 	@Test
 	public void testIntWrapper( )
 	{
-		Integer original = Integer.valueOf(INT);
+		Integer original = new Builder( ).instantiate(Integer.class);
 		Integer clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -140,7 +133,7 @@ public class ClonerTest
 	@Test
 	public void testLongWrapper( )
 	{
-		Long original = Long.valueOf(LONG);
+		Long original = new Builder( ).instantiate(Long.class);
 		Long clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -150,7 +143,7 @@ public class ClonerTest
 	@Test
 	public void testFloatWrapper( )
 	{
-		Float original = Float.valueOf(FLOAT);
+		Float original = new Builder( ).instantiate(Float.class);
 		Float clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -160,7 +153,7 @@ public class ClonerTest
 	@Test
 	public void testDoubleWrapper( )
 	{
-		Double original = Double.valueOf(DOUBLE);
+		Double original = new Builder( ).instantiate(Double.class);
 		Double clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -170,7 +163,7 @@ public class ClonerTest
 	@Test
 	public void testCharWrapper( )
 	{
-		Character original = Character.valueOf(CHAR);
+		Character original = new Builder( ).instantiate(Character.class);
 		Character clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -180,7 +173,7 @@ public class ClonerTest
 	@Test
 	public void testBooleanWrapper( )
 	{
-		Boolean original = Boolean.valueOf(BOOLEAN);
+		Boolean original = new Builder( ).instantiate(Boolean.class);
 		Boolean clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -190,7 +183,7 @@ public class ClonerTest
 	@Test
 	public void testString( )
 	{
-		String original = STRING;
+		String original = new Builder( ).instantiate(String.class);
 		String clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone, original);
@@ -225,7 +218,7 @@ public class ClonerTest
 	@Test
 	public void testMultidimensionalArray( )
 	{
-		byte[ ][ ] original = {{0, 1}, {2, 3}};
+		byte[ ][ ] original = {{0, 1, 2}, null, {3, 4, 5, 6}};
 		byte[ ][ ] clone = new Cloner( ).toClone(original);
 		
 		assertNotSame(clone, original);
@@ -233,8 +226,15 @@ public class ClonerTest
 		
 		for (int index = 0; index < original.length; index++)
 		{
-			assertNotSame(clone[index], original[index]);
-			assertEquals(clone[index], original[index]);
+			if (original[index] == null)
+			{
+				assertNull(clone[index]);
+			}
+			else
+			{
+				assertNotSame(clone[index], original[index]);
+				assertEquals(clone[index], original[index]);
+			}
 		}
 	}
 	
@@ -291,8 +291,8 @@ public class ClonerTest
 	{
 		Cloner cloner = new Cloner( );
 		cloner.register(Immutable.class);
-		cloner.reset( );
 		
+		assertTrue(cloner.reset( ));
 		assertTrue(cloner.register(Immutable.class));
 	}
 	
@@ -301,7 +301,7 @@ public class ClonerTest
 	{
 		Cloner cloner = new Cloner( );
 		cloner.register(Immutable.class);
-		Immutable original = new Immutable(STRING);
+		Immutable original = new Immutable("xyzzy");
 		Immutable clone = cloner.toClone(original);
 		
 		assertSame(clone, original);
@@ -339,7 +339,7 @@ public class ClonerTest
 	@Test
 	public void testNullaryConstructor( )
 	{
-		NoArgs original = new NoArgs(STRING);
+		NoArgs original = new NoArgs("xyzzy");
 		NoArgs clone = new Cloner( ).toClone(original);
 		
 		assertNotSame(clone, original);
@@ -348,11 +348,6 @@ public class ClonerTest
 	
 	public static class Subclass extends NoArgs
 	{
-		public Subclass( )
-		{
-			this.field = "";
-		}
-		
 		public Subclass(String arg)
 		{
 			this.field = arg;
@@ -375,10 +370,184 @@ public class ClonerTest
 	@Test
 	public void testInheritedField( )
 	{
-		Subclass original = new Subclass(STRING);
+		Subclass original = new Subclass("xyzzy");
 		Subclass clone = new Cloner( ).toClone(original);
 		
 		assertSame(clone.field, original.field);
+		assertNotSame(clone, original);
+		assertEquals(clone, original);
+	}
+	
+	@Test
+	public void testAddDefaultSubclass( )
+	{
+		Cloner cloner = new Cloner( );
+		Subclass original = new Subclass("xyzzy");
+		cloner.register(NoArgs.class, original);
+		NoArgs clone = cloner.toClone(original);
+		
+		assertNotSame(clone, original);
+		assertEquals(clone, original);
+	}
+	
+	@Test
+	public void testStringBuilder( )
+	{
+		StringBuilder original = new StringBuilder("xyzzy");
+		StringBuilder clone = new Cloner( ).toClone(original);
+		
+		assertNotSame(clone, original);
+		assertEquals(clone.toString( ), original.toString( ));
+	}
+	
+	public static class Picky
+	{
+		private final int NON_ZERO;
+		
+		public Picky(int arg)
+		{
+			if (arg == 0)
+			{
+				throw
+				(
+					new IllegalArgumentException
+					(
+						String.format("%d (must be non-zero)", arg)
+					)
+				);
+			}
+			else
+			{
+				NON_ZERO = arg;
+			}
+		}
+		
+		public int getNumber( )
+		{
+			return NON_ZERO;
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof Picky)
+			{
+				return this.NON_ZERO == ((Picky)that).NON_ZERO;
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	
+	public static class TakesPicky
+	{
+		private final Subclass STRING_HOLDER;
+		
+		public TakesPicky(Picky number, int addend)
+		{
+			STRING_HOLDER =
+			(
+				new Subclass
+				(
+					String.valueOf
+					(
+						addend + (number == null ? 0 : number.getNumber( ))
+					)
+				)
+			);
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof TakesPicky)
+			{
+				return
+				(
+					this.STRING_HOLDER.equals(((TakesPicky)that).STRING_HOLDER)
+				);
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	
+	@Test
+	public void testFailToInstantiateConstructorArg( )
+	{
+		TakesPicky original = new TakesPicky(new Picky(3), 2);
+		TakesPicky clone = new Cloner( ).toClone(original);
+		
+		assertNotSame(clone, original);
+		assertEquals(clone, original);
+	}
+	
+	public static class Outer
+	{
+		private class Inner
+		{
+			private final String STRING;
+			
+			private Inner( )
+			{
+				STRING = Outer.this.STRING_HOLDER.field;
+			}
+			
+			@Override
+			public boolean equals(Object that)
+			{
+				if (that instanceof Inner)
+				{
+					return
+					(
+						this.STRING.equals(((Inner)that).STRING)
+					);
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+		
+		private final Subclass STRING_HOLDER;
+		
+		public Outer(Subclass arg)
+		{
+			STRING_HOLDER = arg;
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof Outer)
+			{
+				return
+				(
+					this.STRING_HOLDER.equals(((Outer)that).STRING_HOLDER)
+				);
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	
+	@Test
+	public void testInnerClass( )
+	{
+		ROOT_LOGGER.setLevel(Level.DEBUG);
+		
+		Outer.Inner original = new Outer(new Subclass("xyzzy")).new Inner( );
+		Outer.Inner clone = new Cloner( ).toClone(original);
+		
+		ROOT_LOGGER.setLevel(Level.WARN);
+		
 		assertNotSame(clone, original);
 		assertEquals(clone, original);
 	}
