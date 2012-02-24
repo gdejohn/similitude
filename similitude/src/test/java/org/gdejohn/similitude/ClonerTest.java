@@ -497,6 +497,11 @@ public class ClonerTest
 				STRING = Outer.this.STRING_HOLDER.field;
 			}
 			
+			public Outer get( )
+			{
+				return Outer.this;
+			}
+			
 			@Override
 			public boolean equals(Object that)
 			{
@@ -546,9 +551,15 @@ public class ClonerTest
 		Outer.Inner original = new Outer(new Subclass("xyzzy")).new Inner( );
 		Outer.Inner clone = new Cloner( ).toClone(original);
 		
+		Outer originalOuter = original.get( );
+		Outer cloneOuter = clone.get( );
+		
 		ROOT_LOGGER.setLevel(Level.WARN);
 		
 		assertNotSame(clone, original);
+		assertNotSame(cloneOuter, originalOuter);
+		assertEquals(cloneOuter, originalOuter);
+		assertNotSame(cloneOuter.STRING_HOLDER, originalOuter.STRING_HOLDER);
 		assertEquals(clone, original);
 	}
 }

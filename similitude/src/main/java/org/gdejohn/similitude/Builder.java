@@ -19,15 +19,36 @@ public final class Builder
 {
 	static final Logger LOGGER = getLogger(Builder.class);
 	
+	/**
+	 * Default length for new arrays.
+	 * 
+	 * Arrays created by {@link #instantiateArray(Class, int)} are initialized
+	 * to this length.
+	 */
 	private final int DEFAULT_ARRAY_LENGTH = 0;
 	
 	/**
 	 * Immutable types, mapped to default values.
+	 * 
+	 * Initialized to include the primitive types, mapped to their default
+	 * values as per {@link http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5},
+	 * and {@link Cloner#BASIC_TYPES}.
 	 */
 	private final Map<Class<?>, Object> DEFAULTS;
 	
 	{ // Instance initializer, executes at the beginning of every constructor.
-		DEFAULTS = new LinkedHashMap<Class<?>, Object>(Cloner.BASIC_TYPES);
+		DEFAULTS = new LinkedHashMap<Class<?>, Object>( );
+		
+		DEFAULTS.put(byte.class, Byte.valueOf((byte)0));
+		DEFAULTS.put(short.class, Short.valueOf((short)0));
+		DEFAULTS.put(int.class, Integer.valueOf(0));
+		DEFAULTS.put(long.class, Long.valueOf(0L));
+		DEFAULTS.put(float.class, Float.valueOf(0.0f));
+		DEFAULTS.put(double.class, Double.valueOf(0.0d));
+		DEFAULTS.put(char.class, Character.valueOf('\u0000'));
+		DEFAULTS.put(boolean.class, Boolean.valueOf(false));
+		
+		DEFAULTS.putAll(Cloner.BASIC_TYPES);
 	}
 	
 	/**
@@ -98,6 +119,13 @@ public final class Builder
 	 */
 	public <T> T instantiateArray(final Class<T> TYPE, final int LENGTH)
 	{
+		LOGGER.debug
+		(
+			"Instantiating array of type {} and length {}.",
+			TYPE.getCanonicalName( ),
+			LENGTH
+		);
+		
 		return TYPE.cast(Array.newInstance(TYPE.getComponentType( ), LENGTH));
 	}
 	
@@ -106,12 +134,14 @@ public final class Builder
 	 * 
 	 * The result depends on whether there's a SecurityManager present and how
 	 * restrictive it is. Declared constructors are tried first. Failing that,
-	 * public constructors are tried next. Failing that, {@code null} is
-	 * returned.
+	 * public constructors are tried next. Failing that, an exception is
+	 * thrown.
 	 * 
 	 * @param CLASS The class for which to get the constructors.
 	 * 
-	 * @return Some or all of CLASS's constructors, or {@code null}.
+	 * @return Either all of the declared constructors for {@code CLASS}, or the public constructors.
+	 * 
+	 * @throws InstantiationFailedException If neither the declared nor public constructors are accessible.
 	 */
 	private Constructor<?>[ ] getConstructors(final Class<?> CLASS)
 	{
@@ -125,7 +155,8 @@ public final class Builder
 			{
 				LOGGER.debug
 				(
-					"Declared constructors not available for {}.", CLASS
+					"Declared constructors not available for type: {}",
+					CLASS.getCanonicalName( )
 				);
 				
 				return CLASS.getConstructors( );
@@ -135,18 +166,15 @@ public final class Builder
 		{
 			LOGGER.debug
 			(
-				"Public constructors not available for {}.", CLASS
+				"Public constructors not available for: {}",
+				CLASS.getCanonicalName( )
 			);
 			
 			throw
 			(
 				new InstantiationFailedException
 				(
-					String.format
-					(
-						"No available constructors for class %s.",
-						CLASS.getCanonicalName( )
-					)
+					"No available constructors.", e
 				)
 			);
 		}
@@ -297,47 +325,45 @@ public final class Builder
 					
 					continue;
 				}
+				catch (SecurityException e)
+				{
+					LOGGER.warn("Constructor failed.", e);
+					
+					continue;
+				}
 				catch (IllegalAccessException e)
 				{
 					LOGGER.warn("Constructor failed.", e);
 					
 					continue;
 				}
-				catch (SecurityException e)
-				{
-					LOGGER.debug("Constructor failed.", e);
-					
-					continue;
-				}
 				catch (IllegalArgumentException e)
 				{
-					LOGGER.debug("Constructor failed.", e);
+					LOGGER.error("Constructor failed.", e);
 					
 					continue;
 				}
 				catch (InstantiationException e)
 				{
-					LOGGER.debug("Constructor failed.", e);
+					LOGGER.error("Constructor failed.", e);
 					
 					continue;
 				}
 				catch (NoSuchMethodException e)
 				{
-					LOGGER.debug("Constructor failed.", e);
+					LOGGER.error("Constructor failed.", e);
 					
 					continue;
 				}
 				catch (ExceptionInInitializerError e)
 				{
+					LOGGER.error("Constructor failed.", e);
+					
 					throw
 					(
 						new InstantiationFailedException
 						(
-							String.format
-							(
-								"Static initialization failed for class %s.",
-								CLASS.getCanonicalName( )
-							),
+							"Static initialization failed.",
 							e
 						)
 					);

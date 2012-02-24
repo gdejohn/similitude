@@ -10,7 +10,6 @@ import static java.lang.reflect.Array.get;
 import static java.lang.reflect.Array.getLength;
 import static java.lang.reflect.Array.set;
 import static java.lang.reflect.Modifier.isStatic;
-import static java.util.Collections.unmodifiableMap;
 
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
@@ -30,56 +29,43 @@ public final class Cloner
 	static final Logger LOGGER = getLogger(Cloner.class);
 	
 	/**
-	 * Primitive types, wrappers, and {@code String} mapped to default values.
+	 * Wrapper types and {@code String} mapped to default values.
 	 * 
-	 * Primitive types are mapped to their default values as per
-	 * {@link http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5},
-	 * wrapper types are mapped to the default values of their respective
-	 * primitive types, and {@code String} is mapped to the empty string.
+	 * Wrapper types are mapped to the default values of their respective
+	 * primitve types as per {@link http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5},
+	 * and {@code String} is mapped to the empty string. Primitives aren't
+	 * included here because primitive types can't be cloned directly by this
+	 * class, due to autoboxing.
 	 */
 	static final Map<Class<?>, Object> BASIC_TYPES;
 	
 	static
 	{
-		final int INITIAL_CAPACITY = 17;
-		final float LOAD_FACTOR = Math.nextUp(1.0f);
-		
 		/*
-		 * Initial capacity of 17 is equal to the maximum number of entries
-		 * (8 primitive types, 8 wrapper types, and String), ensuring no wasted
-		 * space. Load factor of just over 1.0 ensures that no rehashing will
-		 * be performed.
+		 * This map shouldn't change at runtime, so set the initial capacity to
+		 * the maximum number of entries that will be added (eight wrappers and
+		 * String makes nine) and the load factor to just above one. No wasted
+		 * space, no rehashing.
 		 */
-		final Map<Class<?>, Object> MAP =
+		BASIC_TYPES =
 		(
-			new LinkedHashMap<Class<?>, Object>(INITIAL_CAPACITY, LOAD_FACTOR)
+			new LinkedHashMap<Class<?>, Object>(9, Math.nextUp(1.0f))
 		);
 		
-		MAP.put(byte.class, Byte.valueOf((byte)0));
-		MAP.put(short.class, Short.valueOf((short)0));
-		MAP.put(int.class, Integer.valueOf(0));
-		MAP.put(long.class, Long.valueOf(0L));
-		MAP.put(float.class, Float.valueOf(0.0f));
-		MAP.put(double.class, Double.valueOf(0.0d));
-		MAP.put(char.class, Character.valueOf('\u0000'));
-		MAP.put(boolean.class, Boolean.valueOf(false));
+		BASIC_TYPES.put(Byte.class, Byte.valueOf((byte)0));
+		BASIC_TYPES.put(Short.class, Short.valueOf((short)0));
+		BASIC_TYPES.put(Integer.class, Integer.valueOf(0));
+		BASIC_TYPES.put(Long.class, Long.valueOf(0L));
+		BASIC_TYPES.put(Float.class, Float.valueOf(0.0f));
+		BASIC_TYPES.put(Double.class, Double.valueOf(0.0d));
+		BASIC_TYPES.put(Character.class, Character.valueOf('\u0000'));
+		BASIC_TYPES.put(Boolean.class, Boolean.valueOf(false));
 		
-		MAP.put(Byte.class, Byte.valueOf((byte)0));
-		MAP.put(Short.class, Short.valueOf((short)0));
-		MAP.put(Integer.class, Integer.valueOf(0));
-		MAP.put(Long.class, Long.valueOf(0L));
-		MAP.put(Float.class, Float.valueOf(0.0f));
-		MAP.put(Double.class, Double.valueOf(0.0d));
-		MAP.put(Character.class, Character.valueOf('\u0000'));
-		MAP.put(Boolean.class, Boolean.valueOf(false));
-		
-		MAP.put(String.class, "");
-
-		BASIC_TYPES = unmodifiableMap(MAP);
+		BASIC_TYPES.put(String.class, "");
 	}
 	
 	/**
-	 * Instantiates classes that need to be deep-copied.
+	 * Instantiates types that need to be deep-copied.
 	 */
 	private final Builder BUILDER = new Builder( );
 	
@@ -164,13 +150,36 @@ public final class Cloner
 	 */
 	public <T> T toClone(final T ORIGINAL)
 	{
+		return toClone(ORIGINAL, null);
+	}
+	
+	/**
+	 * Does all of the work for {@link #toClone(Object)}.
+	 * 
+	 * This method calls itself recursively to clone each element in a given
+	 * array, or each field in a given instance of a class type, and in
+	 * addition to the original object to be cloned, it passes itself a
+	 * potential instance to use for the resulting clone that may have already
+	 * been instantiated higher in the call stack. If suitable, creating a new
+	 * instance of the original object's type, which can be very expensive, is
+	 * skipped.
+	 * 
+	 * @param ORIGINAL The object to create a deep copy of.
+	 * @param INSTANCE The potential instance to use for the resulting clone.
+	 * 
+	 * @return A deep copy of {@code ORIGINAL}.
+	 * 
+	 * @throws CloningFailedException If cloning {@code ORIGINAL} fails for any reason.
+	 */
+	private <T> T toClone(final T ORIGINAL, final T INSTANCE)
+	{
 		final T CLONE;
 		
 		if (ORIGINAL == null)
 		{
-			LOGGER.debug("Original object is null.");
-			
 			CLONE = null;
+			
+			LOGGER.debug("Original object is null.");
 		}
 		else
 		{
@@ -180,14 +189,14 @@ public final class Cloner
 			
 			if (CLASS.isEnum( ) || IMMUTABLE.contains(CLASS))
 			{ // Base case, safe to shallow-copy.
+				CLONE = ORIGINAL;
+				
 				LOGGER.debug
 				(
 					"Shallow-copying value of type {}: \"{}\"",
 					CLASS.getCanonicalName( ),
 					ORIGINAL
 				);
-				
-				CLONE = ORIGINAL;
 			}
 			else if (CLASS.isArray( ))
 			{ // Recursively clone each element into new array.
@@ -200,15 +209,31 @@ public final class Cloner
 					LENGTH
 				);
 				
-				CLONE = BUILDER.instantiateArray(CLASS, LENGTH);
+				if (INSTANCE != null && INSTANCE != ORIGINAL && getLength(INSTANCE) == LENGTH && CLASS.isAssignableFrom(INSTANCE.getClass( )))
+				{
+					CLONE = INSTANCE;
+					
+					LOGGER.debug("Array already instantiated.");
+				}
+				else
+				{
+					CLONE = BUILDER.instantiateArray(CLASS, LENGTH);
+					
+					LOGGER.debug("Successfully instantiated array.");
+				}
 				
 				for (int index = 0; index < LENGTH; index++)
 				{ // Clone element at index in ORIGINAL, set at index in CLONE.
-					set(CLONE, index, this.toClone(get(ORIGINAL, index)));
+					set
+					(
+						CLONE,
+						index,
+						this.toClone(get(ORIGINAL, index), get(CLONE, index))
+					);
 					
 					LOGGER.debug
 					(
-						"Successfully cloned element at index {}.", index
+						"Successfully cloned element at index: {}", index
 					);
 				}
 			}
@@ -221,18 +246,31 @@ public final class Cloner
 				
 				try
 				{
-					CLONE = BUILDER.instantiate(CLASS);
-					
-					LOGGER.debug
-					(
-						"Successfully instantiated class type {}.",
-						CLASS.getCanonicalName( )
-					);
+					if (INSTANCE != null && INSTANCE != ORIGINAL && CLASS.isAssignableFrom(INSTANCE.getClass( )))
+					{
+						CLONE = INSTANCE;
+						
+						LOGGER.debug
+						(
+							"Already instantiated class type: {}",
+							CLASS.getCanonicalName( )
+						);
+					}
+					else
+					{
+						CLONE = BUILDER.instantiate(CLASS);
+						
+						LOGGER.debug
+						(
+							"Successfully instantiated class type: {}",
+							CLASS.getCanonicalName( )
+						);
+					}
 					
 					Class<? super T> current = CLASS;
 					
 					do
-					{
+					{ // Traverse up class hierarchy to get inherited fields.
 						final Field[ ] FIELDS = current.getDeclaredFields( );
 						
 						setAccessible(FIELDS, true);
@@ -257,7 +295,11 @@ public final class Cloner
 								
 								FIELD.set
 								(
-									CLONE, this.toClone(FIELD.get(ORIGINAL))
+									CLONE,
+									this.toClone
+									(
+										FIELD.get(ORIGINAL), FIELD.get(CLONE)
+									)
 								);
 								
 								LOGGER.debug
@@ -268,7 +310,7 @@ public final class Cloner
 						}
 						
 						current = current.getSuperclass( );
-					} // Traverse up class hierarchy to get inherited fields.
+					}
 					while (current != null);
 				}
 				catch (CloningFailedException e)
@@ -284,11 +326,7 @@ public final class Cloner
 					throw new CloningFailedException(e);
 				}
 				catch (IllegalAccessException e)
-				{
-					throw new CloningFailedException(e);
-				}
-				catch (ExceptionInInitializerError e)
-				{
+				{ // A SecurityException should always be thrown before this.
 					throw new CloningFailedException(e);
 				}
 			}
