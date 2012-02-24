@@ -7,6 +7,8 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
+import java.util.Arrays;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 
@@ -15,7 +17,12 @@ import org.testng.annotations.Test;
 
 public class ClonerTest
 {
-	static final Logger ROOT_LOGGER = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+	static final Logger ROOT_LOGGER;
+	
+	static
+	{
+		ROOT_LOGGER = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+	}
 	
 	static
 	{
@@ -546,20 +553,62 @@ public class ClonerTest
 	@Test
 	public void testInnerClass( )
 	{
-		ROOT_LOGGER.setLevel(Level.DEBUG);
-		
 		Outer.Inner original = new Outer(new Subclass("xyzzy")).new Inner( );
 		Outer.Inner clone = new Cloner( ).toClone(original);
 		
 		Outer originalOuter = original.get( );
 		Outer cloneOuter = clone.get( );
 		
-		ROOT_LOGGER.setLevel(Level.WARN);
-		
 		assertNotSame(clone, original);
 		assertNotSame(cloneOuter, originalOuter);
 		assertEquals(cloneOuter, originalOuter);
 		assertNotSame(cloneOuter.STRING_HOLDER, originalOuter.STRING_HOLDER);
+		assertEquals(clone, original);
+	}
+	
+	public static class ArrayField
+	{
+		Number[ ] numArray;
+		
+		public ArrayField( )
+		{
+			numArray = new Number[2];
+		}
+		
+		public ArrayField(Number[ ] arg)
+		{
+			numArray = arg;
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof ArrayField)
+			{
+				return
+				(
+					Arrays.equals(this.numArray, ((ArrayField)that).numArray)
+				);
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	
+	@Test
+	public void testCovariantArrays( )
+	{
+		ROOT_LOGGER.setLevel(Level.DEBUG);
+		
+		ArrayField original = new ArrayField(new Integer[ ] {0, 1});
+		ArrayField clone = new Cloner( ).toClone(original);
+		
+		ROOT_LOGGER.setLevel(Level.WARN);
+		
+		assertNotSame(clone, original);
+		assertNotSame(clone.numArray, original.numArray);
 		assertEquals(clone, original);
 	}
 }

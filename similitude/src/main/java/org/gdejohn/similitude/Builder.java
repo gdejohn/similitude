@@ -31,7 +31,7 @@ public final class Builder
 	 * Immutable types, mapped to default values.
 	 * 
 	 * Initialized to include the primitive types, mapped to their default
-	 * values as per {@link http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5},
+	 * values as per <a href="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5">JLS 4.12.5</a>,
 	 * and {@link Cloner#BASIC_TYPES}.
 	 */
 	private final Map<Class<?>, Object> DEFAULTS;

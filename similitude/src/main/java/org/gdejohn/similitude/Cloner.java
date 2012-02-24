@@ -32,7 +32,7 @@ public final class Cloner
 	 * Wrapper types and {@code String} mapped to default values.
 	 * 
 	 * Wrapper types are mapped to the default values of their respective
-	 * primitve types as per {@link http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5},
+	 * primitve types as per <a href="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5">JLS 4.12.5</a>,
 	 * and {@code String} is mapped to the empty string. Primitives aren't
 	 * included here because primitive types can't be cloned directly by this
 	 * class, due to autoboxing.
@@ -112,7 +112,7 @@ public final class Cloner
 	 * 
 	 * @return {@code true} if {@code CLASS} wasn't already registered.
 	 */
-	public <T, U extends T> boolean register(final Class<T> CLASS, final U VALUE) // final Class<? extends T> CLASS?
+	public <T, U extends T> boolean register(final Class<T> CLASS, final U VALUE)
 	{
 		BUILDER.addDefault(CLASS, VALUE);
 		
@@ -209,7 +209,7 @@ public final class Cloner
 					LENGTH
 				);
 				
-				if (INSTANCE != null && INSTANCE != ORIGINAL && getLength(INSTANCE) == LENGTH && CLASS.isAssignableFrom(INSTANCE.getClass( )))
+				if (INSTANCE != null && INSTANCE != ORIGINAL && INSTANCE.getClass( ).isAssignableFrom(CLASS) && getLength(INSTANCE) == LENGTH)
 				{
 					CLONE = INSTANCE;
 					
@@ -246,7 +246,7 @@ public final class Cloner
 				
 				try
 				{
-					if (INSTANCE != null && INSTANCE != ORIGINAL && CLASS.isAssignableFrom(INSTANCE.getClass( )))
+					if (INSTANCE != null && INSTANCE != ORIGINAL && INSTANCE.getClass( ).isAssignableFrom(CLASS))
 					{
 						CLONE = INSTANCE;
 						
