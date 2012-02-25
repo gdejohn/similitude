@@ -1,6 +1,3 @@
-/**
- * Utilities for creating and deep copying instances of arbitrary classes.
- */
 package org.gdejohn.similitude;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -12,6 +9,7 @@ import static java.lang.reflect.Array.set;
 import static java.lang.reflect.Modifier.isStatic;
 
 import java.lang.reflect.Field;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -140,18 +138,15 @@ public final class Cloner
 	}
 	
 	/**
-	 * Creates a deep copy of the given object.
+	 * Original objects that have already been cloned, mapped to their clones.
 	 * 
-	 * @param ORIGINAL The object to create a deep copy of.
-	 * 
-	 * @return A deep copy of {@code ORIGINAL}.
-	 * 
-	 * @throws CloningFailedException If cloning {@code ORIGINAL} fails for any reason.
+	 * {@link #toClone(Object, Object)} maps every encountered object to its
+	 * instantiated clone. When the same object is encountered again, the
+	 * reference to its previously created clone is simply reused. This also
+	 * handles any-dimensional arrays containing themselves an arbitrary number
+	 * of times.
 	 */
-	public <T> T toClone(final T ORIGINAL)
-	{
-		return toClone(ORIGINAL, null);
-	}
+	private Map<Object, Object> CLONES = new IdentityHashMap<Object, Object>( );
 	
 	/**
 	 * Does all of the work for {@link #toClone(Object)}.
@@ -162,7 +157,8 @@ public final class Cloner
 	 * potential instance to use for the resulting clone that may have already
 	 * been instantiated higher in the call stack. If suitable, creating a new
 	 * instance of the original object's type, which can be very expensive, is
-	 * skipped.
+	 * skipped. This shouldn't be called directly, since {@link #CLONES} is
+	 * only cleared in {@code toClone(Object)} once recursion is finished.
 	 * 
 	 * @param ORIGINAL The object to create a deep copy of.
 	 * @param INSTANCE The potential instance to use for the resulting clone.
@@ -183,7 +179,7 @@ public final class Cloner
 		}
 		else
 		{
-			// This cast will always work, since ORIGINAL is of type T.
+			// Type-safe, since ORIGINAL is of type T.
 			@SuppressWarnings("unchecked")
 			final Class<T> CLASS = (Class<T>)ORIGINAL.getClass( );
 			
@@ -197,6 +193,15 @@ public final class Cloner
 					CLASS.getCanonicalName( ),
 					ORIGINAL
 				);
+			}
+			else if (CLONES.containsKey(ORIGINAL))
+			{
+				LOGGER.debug
+				(
+					"This object has already been cloned, shallow-copying."
+				);
+				
+				CLONE = CLASS.cast(CLONES.get(ORIGINAL));
 			}
 			else if (CLASS.isArray( ))
 			{ // Recursively clone each element into new array.
@@ -222,13 +227,18 @@ public final class Cloner
 					LOGGER.debug("Successfully instantiated array.");
 				}
 				
+				CLONES.put(ORIGINAL, CLONE);
+				
 				for (int index = 0; index < LENGTH; index++)
-				{ // Clone element at index in ORIGINAL, set at index in CLONE.
+				{
 					set
 					(
 						CLONE,
 						index,
-						this.toClone(get(ORIGINAL, index), get(CLONE, index))
+						this.toClone
+						(
+							get(ORIGINAL, index), get(CLONE, index)
+						)
 					);
 					
 					LOGGER.debug
@@ -266,6 +276,8 @@ public final class Cloner
 							CLASS.getCanonicalName( )
 						);
 					}
+					
+					CLONES.put(ORIGINAL, CLONE);
 					
 					Class<? super T> current = CLASS;
 					
@@ -331,6 +343,24 @@ public final class Cloner
 				}
 			}
 		}
+		
+		return CLONE;
+	}
+	
+	/**
+	 * Creates a deep copy of the given object.
+	 * 
+	 * @param ORIGINAL The object to create a deep copy of.
+	 * 
+	 * @return A deep copy of {@code ORIGINAL}.
+	 * 
+	 * @throws CloningFailedException If cloning {@code ORIGINAL} fails for any reason.
+	 */
+	public <T> T toClone(final T ORIGINAL)
+	{
+		final T CLONE = toClone(ORIGINAL, null);
+		
+		CLONES.clear( );
 		
 		return CLONE;
 	}

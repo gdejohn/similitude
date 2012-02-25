@@ -7,6 +7,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
+import java.nio.CharBuffer;
 import java.util.Arrays;
 
 import ch.qos.logback.classic.Level;
@@ -243,6 +244,57 @@ public class ClonerTest
 				assertEquals(clone[index], original[index]);
 			}
 		}
+	}
+	
+	@Test
+	public void testFoo( )
+	{
+		Object[ ][ ] original = new Object[1][1];
+		
+		original[0][0] = original;
+		
+		Object[ ][ ] clone = new Cloner( ).toClone(original);
+		
+		assertNotSame(clone, original);
+		assertNotSame(clone[0], original[0]);
+		assertNotSame(clone[0][0], original[0][0]);
+		assertNotSame(clone[0][0], original);
+		assertSame(original[0][0], original);
+		assertSame(clone[0][0], clone);
+	}
+	
+	@Test
+	public void testArrayContainingItself( )
+	{
+		Object[ ][ ] original = new Object[2][ ];
+		
+		original[0] = new CharSequence[ ] {"xyzzy", null, CharBuffer.wrap("foo")};
+		original[1] = new Object[ ][ ] {null, original, original[0], original};
+		
+		Cloner cloner = new Cloner( );
+		
+		ROOT_LOGGER.setLevel(Level.DEBUG);
+		
+		Object[ ][ ] clone = cloner.toClone(original);
+		
+		ROOT_LOGGER.setLevel(Level.WARN);
+		
+		assertNotSame(clone, original);
+		assertNotSame(clone[0], original[0]);
+		assertNotSame(clone[1], original[1]);
+		assertEquals(clone[0], original[0]);
+		assertEquals(clone[1][0], original[1][0]);
+		assertNotSame(clone[1][2], original[1][2]);
+		assertEquals(clone[1][2], original[1][2]);
+		assertNotSame(clone[1][1], original[1][1]);
+		assertNotSame(clone[1][3], original[1][3]);
+		assertSame(clone[1][1], clone);
+		assertSame(original[1][1], original);
+		assertSame(original[1][3], original);
+		assertSame(clone[1][3], clone);
+		
+		assertSame(original[0], original[1][2]);
+		assertSame(clone[0], clone[1][2]);
 	}
 	
 	public static final class Immutable
@@ -600,12 +652,8 @@ public class ClonerTest
 	@Test
 	public void testCovariantArrays( )
 	{
-		ROOT_LOGGER.setLevel(Level.DEBUG);
-		
 		ArrayField original = new ArrayField(new Integer[ ] {0, 1});
 		ArrayField clone = new Cloner( ).toClone(original);
-		
-		ROOT_LOGGER.setLevel(Level.WARN);
 		
 		assertNotSame(clone, original);
 		assertNotSame(clone.numArray, original.numArray);
