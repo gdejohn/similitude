@@ -641,15 +641,38 @@ public class ClonerTest
 	
 	interface GenericInterface<E>
 	{
-		E method(E arg);
+		E withArg(E arg);
+		
+		E withoutArg( );
 	}
 	
 	static class Impl implements GenericInterface<String>
 	{
 		@Override
-		public String method(String arg)
+		public String withArg(String arg)
 		{
 			return arg;
+		}
+		
+		@Override
+		public String withoutArg( )
+		{
+			return "xyzzy";
+		}
+	}
+	
+	static class Impl2 implements GenericInterface<GenericInterface<String>>
+	{
+		@Override
+		public GenericInterface<String> withArg(GenericInterface<String> arg)
+		{
+			return arg;
+		}
+		
+		@Override
+		public GenericInterface<String> withoutArg( )
+		{
+			return new Impl( );
 		}
 	}
 	
@@ -657,9 +680,14 @@ public class ClonerTest
 	{
 		String stringField;
 		
-		public InterfaceParam(GenericInterface<String> arg0, String arg1)
+		public InterfaceParam(GenericInterface<String> arg)
 		{
-			stringField = arg0.method(arg1).toUpperCase( );
+			stringField = arg.withArg(arg.withoutArg( )).toUpperCase( );
+		}
+		
+		public InterfaceParam(GenericInterface<GenericInterface<String>> arg0, String arg1)
+		{
+			stringField = arg0.withArg(arg0.withoutArg( )).withArg(arg1).toUpperCase( );
 		}
 		
 		@Override
@@ -685,11 +713,9 @@ public class ClonerTest
 	@Test
 	public void testGenericInterface( )
 	{
-		ROOT_LOGGER.setLevel(Level.DEBUG);
-		
 		try
 		{
-			InterfaceParam original = new InterfaceParam(new Impl( ), "xyzzy");
+			InterfaceParam original = new InterfaceParam(new Impl( ));
 			InterfaceParam clone = new Cloner( ).toClone(original);
 			
 			assertNotSame(clone, original);
@@ -697,7 +723,56 @@ public class ClonerTest
 		}
 		catch (Exception e)
 		{
-			fail("", e);
+			fail("Test didn't complete normally.", e);
+		}
+	}
+	
+	@Test
+	public void testNestedTypeParameters( )
+	{
+		//ROOT_LOGGER.setLevel(Level.DEBUG);
+		
+		try
+		{
+			InterfaceParam original = new InterfaceParam(new Impl2( ), "Hello, world!");
+			InterfaceParam clone = new Cloner( ).toClone(original);
+			
+			assertNotSame(clone, original);
+			assertEquals(clone, original);
+		}
+		catch (Exception e)
+		{
+			fail("Test didn't complete normally.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(Level.WARN);
+		}
+	}
+	
+	interface VarargsInterface<E>
+	{
+		E foo(E... args);
+		<T> T bar(T... args);
+	}
+	
+	static class Test2
+	{
+		Test2(VarargsInterface<String> s)
+		{
+			s.foo("xyzzy").length( );
+			s.bar(0L).compareTo(111111111111L);
+		}
+	}
+	
+	@Test
+	public void testVarargsInterface( )
+	{
+		ROOT_LOGGER.setLevel(Level.DEBUG);
+		
+		try
+		{
+			new Builder( ).instantiate(Test2.class);
 		}
 		finally
 		{

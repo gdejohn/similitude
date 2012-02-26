@@ -2,10 +2,12 @@ package org.gdejohn.similitude;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.Map;
 
 import org.slf4j.Logger;
 
@@ -28,13 +30,19 @@ class Handler implements InvocationHandler
 	private final Builder BUILDER;
 	
 	/**
+	 * The type arguments parameterizing the type being proxied.
+	 */
+	private final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS;
+	
+	/**
 	 * Initializes the associated {@code Builder} instance.
 	 * 
 	 * @param BUILDER The {@code Builder} instance that created {@code this}.
 	 */
-	Handler(final Builder BUILDER)
+	Handler(final Builder BUILDER, final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS)
 	{
 		this.BUILDER = BUILDER;
+		this.TYPE_ARGUMENTS = TYPE_ARGUMENTS;
 	}
 	
 	/**
@@ -68,55 +76,69 @@ class Handler implements InvocationHandler
 		}
 		else if (GENERIC_RETURN_TYPE instanceof TypeVariable)
 		{
-			final Type[ ] PARAMETERS = METHOD.getGenericParameterTypes( );
-			
-			for (int index = 0; index < PARAMETERS.length; index++)
-			{ // Check arguments for parameterization of return type.
-				try
-				{
-					if (GENERIC_RETURN_TYPE.equals(PARAMETERS[index]) && ARGUMENTS[index] != null)
+			if (TYPE_ARGUMENTS != null && TYPE_ARGUMENTS.containsKey(GENERIC_RETURN_TYPE))
+			{
+				return
+				(
+					BUILDER.instantiate
+					(
+						TYPE_ARGUMENTS.get(GENERIC_RETURN_TYPE)
+					)
+				);
+			}
+			else
+			{
+				final Type[ ] PARAMETERS = METHOD.getGenericParameterTypes( );
+				
+				for (int index = 0; index < PARAMETERS.length; index++)
+				{ // Check arguments for parameterization of return type.
+					try
+					{
+						LOGGER.debug("Parameter: {}, Argument: {}", PARAMETERS[index], ARGUMENTS[index]); /////////////////////////////////////////////////////////////////////////////
+						
+						if(ARGUMENTS[index] != null)
+						{
+							if (GENERIC_RETURN_TYPE.equals(PARAMETERS[index]))
+							{
+								LOGGER.debug
+								(
+									"Generic return type {} parameterized by argument type {}.",
+									GENERIC_RETURN_TYPE,
+									ARGUMENTS[index].getClass( ).getSimpleName( )
+								);
+								
+								return
+								(
+									BUILDER.instantiate(ARGUMENTS[index].getClass( ))
+								);
+							}
+							else if(PARAMETERS[index] instanceof GenericArrayType)
+							{
+								if (GENERIC_RETURN_TYPE.equals(((GenericArrayType)PARAMETERS[index]).getGenericComponentType( )))
+								{
+									return BUILDER.instantiate(ARGUMENTS[index].getClass( ).getComponentType( ));
+								}
+							}
+						}
+					}
+					catch (InstantiationFailedException e)
 					{
 						LOGGER.debug
 						(
-							"Generic return type {} parameterized by argument type {}.",
-							GENERIC_RETURN_TYPE,
-							ARGUMENTS[index].getClass( ).getCanonicalName( )
-						);
-						
-						return
-						(
-							BUILDER.instantiate(ARGUMENTS[index].getClass( ))
+							"Instantiating argument type failed.",
+							e
 						);
 					}
 				}
-				catch (InstantiationFailedException e)
-				{
-					LOGGER.debug
-					(
-						"Instantiating argument type failed.",
-						e
-					);
-				}
-				catch (ArrayIndexOutOfBoundsException e)
-				{
-					throw
-					(
-						new InstantiationFailedException
-						(
-							"Number of arguments and parameters don't match.",
-							e
-						)
-					);
-				}
-			}
-			
-			throw
-			(
-				new InstantiationFailedException
+				
+				throw
 				(
-					"Couldn't find parameterization of generic return type."
-				)
-			);
+					new InstantiationFailedException
+					(
+						"Couldn't find parameterization of generic return type."
+					)
+				);
+			}
 		}
 		else
 		{

@@ -90,7 +90,7 @@ public final class Cloner
 		LOGGER.debug
 		(
 			"Registering class {} as immutable: {}",
-			CLASS.getCanonicalName( ),
+			CLASS.getSimpleName( ),
 			CHANGED ? "changed" : "unchanged"
 		);
 		
@@ -190,7 +190,7 @@ public final class Cloner
 				LOGGER.debug
 				(
 					"Shallow-copying value of type {}: \"{}\"",
-					CLASS.getCanonicalName( ),
+					CLASS.getSimpleName( ),
 					ORIGINAL
 				);
 			}
@@ -210,7 +210,7 @@ public final class Cloner
 				LOGGER.debug
 				(
 					"Cloning array of type {} and length {}.",
-					CLASS.getCanonicalName( ),
+					CLASS.getSimpleName( ),
 					LENGTH
 				);
 				
@@ -243,7 +243,7 @@ public final class Cloner
 						LOGGER.debug
 						(
 							"Successfully cloned element of {} array at index: {}",
-							CLASS.getCanonicalName( ),
+							CLASS.getSimpleName( ),
 							index
 						);
 					}
@@ -268,7 +268,7 @@ public final class Cloner
 			{ // Instantiate CLASS, recursively clone fields.
 				LOGGER.debug
 				(
-					"Cloning class type: {}", CLASS.getCanonicalName( )
+					"Cloning class type: {}", CLASS.getSimpleName( )
 				);
 				
 				try
@@ -280,7 +280,7 @@ public final class Cloner
 						LOGGER.debug
 						(
 							"Already instantiated class type: {}",
-							CLASS.getCanonicalName( )
+							CLASS.getSimpleName( )
 						);
 					}
 					else
@@ -290,7 +290,7 @@ public final class Cloner
 						LOGGER.debug
 						(
 							"Successfully instantiated class type: {}",
-							CLASS.getCanonicalName( )
+							CLASS.getSimpleName( )
 						);
 					}
 					
@@ -342,19 +342,51 @@ public final class Cloner
 				}
 				catch (CloningFailedException e)
 				{ // Cloning a field failed somewhere in the object graph.
-					throw new CloningFailedException(e);
+					throw
+					(
+						new CloningFailedException
+						(
+							"Cloning instance of class %s failed.",
+							e,
+							CLASS.getSimpleName( )
+						)
+					);
 				}
 				catch (InstantiationFailedException e)
 				{ // Instantiating CLASS failed.
-					throw new CloningFailedException("Cloning failed.", e);
+					throw
+					(
+						new CloningFailedException
+						(
+							"Creating new instance of class %s failed.",
+							e,
+							CLASS.getSimpleName( )
+						)
+					);
 				}
 				catch (SecurityException e)
 				{ // Fields couldn't be made accessible.
-					throw new CloningFailedException(e);
+					throw
+					(
+						new CloningFailedException
+						(
+							"Fields for class %s couldn't be made accessible.",
+							e,
+							CLASS.getSimpleName( )
+						)
+					);
 				}
 				catch (IllegalAccessException e)
 				{ // A SecurityException should always be thrown before this.
-					throw new CloningFailedException(e);
+					throw
+					(
+						new CloningFailedException
+						(
+							"Fields for class %s couldn't be accessed.",
+							e,
+							CLASS.getSimpleName( )
+						)
+					);
 				}
 			}
 		}

@@ -8,18 +8,18 @@ public class InstantiationFailedException extends RuntimeException
 		super( );
 	}
 	
-	public InstantiationFailedException(String message)
+	public InstantiationFailedException(final String FORMAT, final Object... ARGUMENTS)
 	{
-		super(message);
+		super(String.format(FORMAT, ARGUMENTS));
 	}
 	
-	public InstantiationFailedException(Throwable cause)
+	public InstantiationFailedException(final Throwable CAUSE)
 	{
-		super(cause);
+		super(CAUSE);
 	}
 	
-	public InstantiationFailedException(String message, Throwable cause)
+	public InstantiationFailedException(final String FORMAT, final Throwable CAUSE, final Object... ARGUMENTS)
 	{
-		super(message, cause);
+		super(String.format(FORMAT, ARGUMENTS), CAUSE);
 	}
 }

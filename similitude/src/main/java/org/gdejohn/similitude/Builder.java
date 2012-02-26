@@ -4,8 +4,14 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -19,6 +25,8 @@ import org.slf4j.Logger;
 public final class Builder
 {
 	static final Logger LOGGER = getLogger(Builder.class);
+	
+	private static final Map<TypeVariable<?>, Type> EMPTY_MAP = Collections.emptyMap( );
 	
 	/**
 	 * Default length for new arrays.
@@ -69,7 +77,7 @@ public final class Builder
 		(
 			"Adding default value \"{}\" for type {}.",
 			VALUE,
-			CLASS.getCanonicalName( )
+			CLASS.getSimpleName( )
 		);
 		
 		return IMMUTABLE_DEFAULTS.put(CLASS, VALUE);
@@ -99,7 +107,7 @@ public final class Builder
 		LOGGER.debug
 		(
 			"Getting default value for type {}.",
-			CLASS.getCanonicalName( )
+			CLASS.getSimpleName( )
 		);
 		
 		return VALUE;
@@ -123,7 +131,7 @@ public final class Builder
 		LOGGER.debug
 		(
 			"Instantiating array of type {} and length {}.",
-			TYPE.getCanonicalName( ),
+			TYPE.getSimpleName( ),
 			LENGTH
 		);
 		
@@ -157,7 +165,7 @@ public final class Builder
 				LOGGER.debug
 				(
 					"Declared constructors not available for type: {}",
-					CLASS.getCanonicalName( )
+					CLASS.getSimpleName( )
 				);
 				
 				return CLASS.getConstructors( );
@@ -168,16 +176,71 @@ public final class Builder
 			LOGGER.debug
 			(
 				"Public constructors not available for: {}",
-				CLASS.getCanonicalName( )
+				CLASS.getSimpleName( )
 			);
 			
 			throw
 			(
 				new InstantiationFailedException
 				(
-					"No available constructors.", e
+					"No available constructors for: {}",
+					e,
+					CLASS.getSimpleName( )
 				)
 			);
+		}
+	}
+
+	/**
+	 * Maps type variables to supplied type arguments.
+	 * 
+	 * @param GENERIC_TYPE The generic type with its type arguments.
+	 * 
+	 * @return Type variables mapped to their arguments, or the empty map if no type variables are declared.
+	 */
+	public Map<TypeVariable<?>, Type> getTypeArguments(final Type GENERIC_TYPE)
+	{
+		if (GENERIC_TYPE instanceof ParameterizedType)
+		{
+			final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS =
+			(
+				new LinkedHashMap<TypeVariable<?>, Type>( )
+			);
+			
+			Type current = GENERIC_TYPE;
+			
+			do
+			{
+				LOGGER.debug("Current type: {}", current);
+				
+				final TypeVariable<?>[ ] PARAMETERS =
+				(
+					((Class<?>)((ParameterizedType)current).getRawType( )).getTypeParameters( )
+				);
+				
+				final Type[ ] ARGUMENTS =
+				(
+					((ParameterizedType)current).getActualTypeArguments( )
+				);
+				
+				for (int index = 0; index < PARAMETERS.length; index++)
+				{
+					TYPE_ARGUMENTS.put
+					(
+						PARAMETERS[index],
+						ARGUMENTS[index]
+					);
+				}
+				
+				current = ((ParameterizedType)current).getOwnerType( );
+			}
+			while (current instanceof ParameterizedType);
+			
+			return Collections.unmodifiableMap(TYPE_ARGUMENTS);
+		}
+		else
+		{
+			return EMPTY_MAP;
 		}
 	}
 	
@@ -192,12 +255,13 @@ public final class Builder
 	 * for instructions on how to enable logging.
 	 * 
 	 * @param CLASS The class to instantiate.
+	 * @param TYPE_ARGUMENTS Type parameters mapped to arguments.
 	 * 
 	 * @return An instance of {@code CLASS}.
 	 * 
 	 * @throws InstantiationFailedException If instantiating {@code CLASS} fails for any reason.
 	 */
-	public <T> T instantiate(final Class<T> CLASS)
+	public <T> T instantiate(final Class<T> CLASS, final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS)
 	{
 		if (CLASS == null)
 		{
@@ -213,7 +277,7 @@ public final class Builder
 		{ // Base case, return first declared constant.
 			LOGGER.debug
 			(
-				"Instantiating enum type: {}", CLASS.getCanonicalName( )
+				"Instantiating enum type: {}", CLASS.getSimpleName( )
 			);
 			
 			try
@@ -226,7 +290,9 @@ public final class Builder
 				(
 					new InstantiationFailedException
 					(
-						"Enum type declares no constants.", e
+						"Enum type %s declares no constants.",
+						e,
+						CLASS.getSimpleName( )
 					)
 				);
 			}
@@ -239,7 +305,7 @@ public final class Builder
 		{ // Base case, return dynamic proxy.
 			LOGGER.debug
 			(
-				"Creating proxy for interface {}.", CLASS.getCanonicalName( )
+				"Creating proxy for interface {}.", CLASS.getSimpleName( )
 			);
 			
 			return
@@ -250,7 +316,7 @@ public final class Builder
 					(
 						CLASS.getClassLoader( ),
 						new Class<?>[ ] {CLASS},
-						new Handler(this)
+						new Handler(this, TYPE_ARGUMENTS)
 					)
 				)
 			);
@@ -259,7 +325,7 @@ public final class Builder
 		{ // Class type, reflectively invoke each constructor until one works.
 			LOGGER.debug
 			(
-				"Instantiating class type: {}", CLASS.getCanonicalName( )
+				"Instantiating class type: {}", CLASS.getSimpleName( )
 			);
 			
 			for (final Constructor<?> CONSTRUCTOR : getConstructors(CLASS))
@@ -293,6 +359,11 @@ public final class Builder
 					 */
 					GENERIC_CONSTRUCTOR.setAccessible(true);
 					
+					final Type[ ] GENERIC_PARAMETERS =
+					(
+						GENERIC_CONSTRUCTOR.getGenericParameterTypes( )
+					);
+					
 					final Object[ ] ARGUMENTS =
 					(
 						new Object[PARAMETERS.length]
@@ -306,12 +377,19 @@ public final class Builder
 					{
 						try
 						{
-							ARGUMENTS[index] = instantiate(PARAMETERS[index]);
+							ARGUMENTS[index] =
+							(
+								instantiate
+								(
+									PARAMETERS[index],
+									getTypeArguments(GENERIC_PARAMETERS[index])
+								)
+							);
 							
 							LOGGER.debug
 							(
 								"Successfully instantiated {} parameter.",
-								PARAMETERS[index].getCanonicalName( )
+								PARAMETERS[index].getSimpleName( )
 							);
 						}
 						catch (InstantiationFailedException e)
@@ -336,7 +414,9 @@ public final class Builder
 					/*
 					 * If newInstance( ) completes normally, then instantiation
 					 * was successful, and the result is returned, skipping the
-					 * rest of the constructors.
+					 * rest of the loop. If an exception is thrown at any point
+					 * in this try block, it's caught and logged, and the loop
+					 * continues, trying the next constructor.
 					 */
 					return GENERIC_CONSTRUCTOR.newInstance(ARGUMENTS);
 				}
@@ -384,8 +464,9 @@ public final class Builder
 					(
 						new InstantiationFailedException
 						(
-							"Static initialization failed.",
-							e
+							"Static initialization failed for type %s.",
+							e,
+							CLASS.getSimpleName( )
 						)
 					);
 				}
@@ -399,12 +480,45 @@ public final class Builder
 			(
 				new InstantiationFailedException
 				(
-					String.format
-					(
-						"No working constructor was found for class %s.",
-						CLASS.getCanonicalName( )
-					)
+					"No working constructor was found for class %s.",
+					CLASS.getSimpleName( )
 				)
+			);
+		}
+	}
+	
+	public <T> T instantiate(final Class<T> TYPE)
+	{
+		return instantiate(TYPE, EMPTY_MAP);
+	}
+	
+	public Object instantiate(final Type GENERIC_TYPE)
+	{
+		if (GENERIC_TYPE instanceof Class)
+		{
+			return instantiate((Class<?>)GENERIC_TYPE);
+		}
+		else if (GENERIC_TYPE instanceof GenericArrayType)
+		{
+			return null;
+		}
+		else if (GENERIC_TYPE instanceof ParameterizedType)
+		{
+			return instantiate((Class<?>)((ParameterizedType)GENERIC_TYPE).getRawType( ), getTypeArguments(GENERIC_TYPE));
+		}
+		else if (GENERIC_TYPE instanceof WildcardType)
+		{
+			return null;
+		}
+		else if (GENERIC_TYPE instanceof TypeVariable)
+		{
+			return null;
+		}
+		else
+		{
+			throw new InstantiationFailedException
+			(
+				"Type %s not recognized.", GENERIC_TYPE
 			);
 		}
 	}

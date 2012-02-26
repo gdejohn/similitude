@@ -8,18 +8,18 @@ public class CloningFailedException extends RuntimeException
 		super( );
 	}
 	
-	public CloningFailedException(String message)
+	public CloningFailedException(final String FORMAT, final Object... ARGUMENTS)
 	{
-		super(message);
+		super(String.format(FORMAT, ARGUMENTS));
 	}
 	
-	public CloningFailedException(Throwable cause)
+	public CloningFailedException(final Throwable CAUSE)
 	{
-		super(cause);
+		super(CAUSE);
 	}
 	
-	public CloningFailedException(String message, Throwable cause)
+	public CloningFailedException(final String FORMAT, final Throwable CAUSE, final Object... ARGUMENTS)
 	{
-		super(message, cause);
+		super(String.format(FORMAT, ARGUMENTS), CAUSE);
 	}
 }
