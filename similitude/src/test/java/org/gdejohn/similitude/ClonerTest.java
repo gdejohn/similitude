@@ -1,20 +1,22 @@
 package org.gdejohn.similitude;
 
+import static java.util.Arrays.deepEquals;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
-import java.nio.CharBuffer;
 import java.util.Arrays;
-
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
+import java.util.List;
 
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 
 public class ClonerTest
 {
@@ -247,7 +249,7 @@ public class ClonerTest
 	}
 	
 	@Test
-	public void testFoo( )
+	public void testArrayContainingItself( )
 	{
 		Object[ ][ ] original = new Object[1][1];
 		
@@ -263,45 +265,11 @@ public class ClonerTest
 		assertSame(clone[0][0], clone);
 	}
 	
-	@Test
-	public void testArrayContainingItself( )
-	{
-		Object[ ][ ] original = new Object[2][ ];
-		
-		original[0] = new CharSequence[ ] {"xyzzy", null, CharBuffer.wrap("foo")};
-		original[1] = new Object[ ][ ] {null, original, original[0], original};
-		
-		Cloner cloner = new Cloner( );
-		
-		ROOT_LOGGER.setLevel(Level.DEBUG);
-		
-		Object[ ][ ] clone = cloner.toClone(original);
-		
-		ROOT_LOGGER.setLevel(Level.WARN);
-		
-		assertNotSame(clone, original);
-		assertNotSame(clone[0], original[0]);
-		assertNotSame(clone[1], original[1]);
-		assertEquals(clone[0], original[0]);
-		assertEquals(clone[1][0], original[1][0]);
-		assertNotSame(clone[1][2], original[1][2]);
-		assertEquals(clone[1][2], original[1][2]);
-		assertNotSame(clone[1][1], original[1][1]);
-		assertNotSame(clone[1][3], original[1][3]);
-		assertSame(clone[1][1], clone);
-		assertSame(original[1][1], original);
-		assertSame(original[1][3], original);
-		assertSame(clone[1][3], clone);
-		
-		assertSame(original[0], original[1][2]);
-		assertSame(clone[0], clone[1][2]);
-	}
-	
-	public static final class Immutable
+	public static final class Immutable2
 	{
 		private final String field;
 		
-		public Immutable(String argument)
+		public Immutable2(String argument)
 		{
 			this.field = argument;
 		}
@@ -309,9 +277,9 @@ public class ClonerTest
 		@Override
 		public boolean equals(Object that)
 		{
-			if (that instanceof Immutable)
+			if (that instanceof Immutable2)
 			{
-				return this.field.equals(((Immutable)that).field);
+				return this.field.equals(((Immutable2)that).field);
 			}
 			else
 			{
@@ -325,16 +293,16 @@ public class ClonerTest
 	{
 		Cloner cloner = new Cloner( );
 		
-		assertTrue(cloner.register(Immutable.class));
+		assertTrue(cloner.register(Immutable2.class));
 	}
 	
 	@Test
 	public void testReregister( )
 	{
 		Cloner cloner = new Cloner( );
-		cloner.register(Immutable.class);
+		cloner.register(Immutable2.class);
 		
-		assertFalse(cloner.register(Immutable.class));
+		assertFalse(cloner.register(Immutable2.class));
 	}
 	
 	@Test
@@ -349,34 +317,34 @@ public class ClonerTest
 	public void testReset( )
 	{
 		Cloner cloner = new Cloner( );
-		cloner.register(Immutable.class);
+		cloner.register(Immutable2.class);
 		
 		assertTrue(cloner.reset( ));
-		assertTrue(cloner.register(Immutable.class));
+		assertTrue(cloner.register(Immutable2.class));
 	}
 	
 	@Test
 	public void testImmutable( )
 	{
 		Cloner cloner = new Cloner( );
-		cloner.register(Immutable.class);
-		Immutable original = new Immutable("xyzzy");
-		Immutable clone = cloner.toClone(original);
+		cloner.register(Immutable2.class);
+		Immutable2 original = new Immutable2("xyzzy");
+		Immutable2 clone = cloner.toClone(original);
 		
 		assertSame(clone, original);
 		assertEquals(clone, original);
 	}
 	
-	public static class NoArgs
+	public static class Superclass2
 	{
 		public String field;
 		
-		public NoArgs( )
+		public Superclass2( )
 		{
 			this.field = "";
 		}
 		
-		public NoArgs(String arg)
+		public Superclass2(String arg)
 		{
 			this.field = arg;
 		}
@@ -384,9 +352,9 @@ public class ClonerTest
 		@Override
 		public boolean equals(Object that)
 		{
-			if (that instanceof NoArgs)
+			if (that instanceof Superclass2)
 			{
-				return this.field.equals(((NoArgs)that).field);
+				return this.field.equals(((Superclass2)that).field);
 			}
 			else
 			{
@@ -395,17 +363,7 @@ public class ClonerTest
 		}
 	}
 	
-	@Test
-	public void testNullaryConstructor( )
-	{
-		NoArgs original = new NoArgs("xyzzy");
-		NoArgs clone = new Cloner( ).toClone(original);
-		
-		assertNotSame(clone, original);
-		assertEquals(clone, original);
-	}
-	
-	public static class Subclass extends NoArgs
+	public static class Subclass extends Superclass2
 	{
 		public Subclass(String arg)
 		{
@@ -427,6 +385,16 @@ public class ClonerTest
 	}
 	
 	@Test
+	public void testNullaryConstructor( )
+	{
+		Superclass2 original = new Superclass2("xyzzy");
+		Superclass2 clone = new Cloner( ).toClone(original);
+		
+		assertNotSame(clone, original);
+		assertEquals(clone, original);
+	}
+	
+	@Test
 	public void testInheritedField( )
 	{
 		Subclass original = new Subclass("xyzzy");
@@ -442,8 +410,8 @@ public class ClonerTest
 	{
 		Cloner cloner = new Cloner( );
 		Subclass original = new Subclass("xyzzy");
-		cloner.register(NoArgs.class, original);
-		NoArgs clone = cloner.toClone(original);
+		cloner.register(Superclass2.class, original);
+		Superclass2 clone = cloner.toClone(original);
 		
 		assertNotSame(clone, original);
 		assertEquals(clone, original);
@@ -545,7 +513,7 @@ public class ClonerTest
 		assertEquals(clone, original);
 	}
 	
-	public static class Outer
+	public static class Outer2
 	{
 		private class Inner
 		{
@@ -553,12 +521,12 @@ public class ClonerTest
 			
 			private Inner( )
 			{
-				STRING = Outer.this.STRING_HOLDER.field;
+				STRING = Outer2.this.STRING_HOLDER.field;
 			}
 			
-			public Outer get( )
+			public Outer2 get( )
 			{
-				return Outer.this;
+				return Outer2.this;
 			}
 			
 			@Override
@@ -580,7 +548,7 @@ public class ClonerTest
 		
 		private final Subclass STRING_HOLDER;
 		
-		public Outer(Subclass arg)
+		public Outer2(Subclass arg)
 		{
 			STRING_HOLDER = arg;
 		}
@@ -588,11 +556,11 @@ public class ClonerTest
 		@Override
 		public boolean equals(Object that)
 		{
-			if (that instanceof Outer)
+			if (that instanceof Outer2)
 			{
 				return
 				(
-					this.STRING_HOLDER.equals(((Outer)that).STRING_HOLDER)
+					this.STRING_HOLDER.equals(((Outer2)that).STRING_HOLDER)
 				);
 			}
 			else
@@ -605,16 +573,17 @@ public class ClonerTest
 	@Test
 	public void testInnerClass( )
 	{
-		Outer.Inner original = new Outer(new Subclass("xyzzy")).new Inner( );
-		Outer.Inner clone = new Cloner( ).toClone(original);
+		Outer2.Inner original = new Outer2(new Subclass("xyzzy")).new Inner( );
+		Outer2.Inner clone = new Cloner( ).toClone(original);
 		
-		Outer originalOuter = original.get( );
-		Outer cloneOuter = clone.get( );
+		Outer2 originalOuter = original.get( );
+		Outer2 cloneOuter = clone.get( );
 		
 		assertNotSame(clone, original);
 		assertNotSame(cloneOuter, originalOuter);
 		assertEquals(cloneOuter, originalOuter);
 		assertNotSame(cloneOuter.STRING_HOLDER, originalOuter.STRING_HOLDER);
+		assertEquals(cloneOuter.STRING_HOLDER, originalOuter.STRING_HOLDER);
 		assertEquals(clone, original);
 	}
 	
@@ -658,5 +627,256 @@ public class ClonerTest
 		assertNotSame(clone, original);
 		assertNotSame(clone.numArray, original.numArray);
 		assertEquals(clone, original);
+	}
+	
+	@Test
+	public void testInterface( )
+	{
+		Builder builder = new Builder( );
+		
+		List<?> list = builder.instantiate(List.class);
+		
+		assertEquals(list.add(null), (boolean)builder.getDefault(boolean.class));
+	}
+	
+	interface GenericInterface<E>
+	{
+		E method(E arg);
+	}
+	
+	static class Impl implements GenericInterface<String>
+	{
+		@Override
+		public String method(String arg)
+		{
+			return arg;
+		}
+	}
+	
+	static class InterfaceParam
+	{
+		String stringField;
+		
+		public InterfaceParam(GenericInterface<String> arg0, String arg1)
+		{
+			stringField = arg0.method(arg1).toUpperCase( );
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof InterfaceParam)
+			{
+				return
+				(
+					this.stringField.equals
+					(
+						((InterfaceParam)that).stringField
+					)
+				);
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	
+	@Test
+	public void testGenericInterface( )
+	{
+		ROOT_LOGGER.setLevel(Level.DEBUG);
+		
+		try
+		{
+			InterfaceParam original = new InterfaceParam(new Impl( ), "xyzzy");
+			InterfaceParam clone = new Cloner( ).toClone(original);
+			
+			assertNotSame(clone, original);
+			assertEquals(clone, original);
+		}
+		catch (Exception e)
+		{
+			fail("", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(Level.WARN);
+		}
+	}
+	
+	private static class Mutable
+	{
+		private final byte[ ][ ] FINAL_FIELD;
+		
+		private Mutable(byte[ ]... args)
+		{
+			FINAL_FIELD = new byte[args.length][ ];
+			
+			for (int i = 0; i < args.length; i++)
+			{
+				FINAL_FIELD[i] = new byte[args[i].length];
+				
+				for (int j = 0; j < args[i].length; j++)
+				{
+					FINAL_FIELD[i][j] = args[i][j];
+				}
+			}
+		}
+		
+		@Override
+		public boolean equals(Object that)
+		{
+			if (that instanceof Mutable)
+			{
+				return
+				(
+					deepEquals
+					(
+						this.FINAL_FIELD, ((Mutable)that).FINAL_FIELD
+					)
+				);
+			}
+			else
+			{
+				return false;
+			}
+		}
+		
+		public boolean isDistinctFrom(Mutable that)
+		{
+			if (this == that || this.FINAL_FIELD == that.FINAL_FIELD)
+			{
+				return false;
+			}
+			else
+			{
+				for (byte[ ] thisSubArray : this.FINAL_FIELD)
+				{
+					for (byte[ ] thatSubArray : that.FINAL_FIELD)
+					{
+						if (thisSubArray == thatSubArray)
+						{
+							return false;
+						}
+					}
+				}
+				
+				for (byte[ ] thatSubArray : that.FINAL_FIELD)
+				{
+					for (byte[ ] thisSubArray : this.FINAL_FIELD)
+					{
+						if (thisSubArray == thatSubArray)
+						{
+							return false;
+						}
+					}
+				}
+				
+				return true;
+			}
+		}
+	}
+	
+	private static class Superclass
+	{
+		protected final Mutable INHERITED_FIELD;
+		
+		protected Superclass(byte[ ]... args)
+		{
+			INHERITED_FIELD = new Mutable(args);
+		}
+		
+		@Override
+		public boolean equals(Object arg)
+		{
+			if (arg instanceof Superclass)
+			{
+				Superclass that = (Superclass)arg;
+				
+				return this.INHERITED_FIELD.equals(that.INHERITED_FIELD);
+			}
+			else
+			{
+				return false;
+			}
+		}
+		
+		public boolean isDistinctFrom(Superclass that)
+		{
+			if (this != that)
+			{
+				if (this.INHERITED_FIELD.isDistinctFrom(that.INHERITED_FIELD))
+				{
+					return true;
+				}
+			}
+			
+			return false;
+		}
+	}
+
+	private enum Outer
+	{
+		FIRST_CONSTANT((byte)1),
+		SECOND_CONSTANT((byte)2);
+		
+		private final byte factor;
+		
+		private Outer(byte arg)
+		{
+			factor = arg;
+		}
+		
+		private class Inner extends Superclass
+		{
+			private Inner(byte arg)
+			{
+				byte[ ][ ] array = INHERITED_FIELD.FINAL_FIELD;
+				
+				for (int i = 0; i < array.length; i++)
+				{
+					for (int j = 0; j < array[i].length; j++)
+					{
+						array[i][j] *= arg + factor;
+					}
+				}
+			}
+			
+			private Outer getEnclosingInstance( )
+			{
+				return Outer.this;
+			}
+			
+			@Override
+			public boolean equals(Object arg)
+			{
+				if (arg instanceof Inner)
+				{
+					Inner that = (Inner)arg;
+					
+					Outer thisEnclosing = this.getEnclosingInstance( );
+					Outer thatEnclosing = that.getEnclosingInstance( );
+					
+					if (thisEnclosing.equals(thatEnclosing))
+					{
+						return super.equals(arg);
+					}
+				}
+				
+				return false;
+			}
+		}
+	}
+	
+	@Test
+	public void testEverything( )
+	{
+		Outer.Inner original = Outer.SECOND_CONSTANT.new Inner((byte)1);
+		
+		Outer.Inner clone = new Cloner( ).toClone(original);
+
+		assertEquals(clone, original);
+		assertTrue(clone.isDistinctFrom(original));
 	}
 }

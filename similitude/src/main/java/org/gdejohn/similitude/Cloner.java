@@ -121,8 +121,8 @@ public final class Cloner
 	 * Resets {@link #IMMUTABLE} to default values.
 	 * 
 	 * After this method returns, {@code IMMUTABLE} will contain the primitive
-	 * types, their respective wrappers, and {@code String}. Any other values
-	 * that were previously added by the user are removed.
+	 * wrappers and {@code String}. Any other values that were previously added
+	 * by the user are removed.
 	 */
 	public boolean reset( )
 	{
@@ -231,20 +231,37 @@ public final class Cloner
 				
 				for (int index = 0; index < LENGTH; index++)
 				{
-					set
-					(
-						CLONE,
-						index,
-						this.toClone
+					try
+					{
+						set
 						(
-							get(ORIGINAL, index), get(CLONE, index)
-						)
-					);
-					
-					LOGGER.debug
-					(
-						"Successfully cloned element at index: {}", index
-					);
+							CLONE,
+							index,
+							toClone(get(ORIGINAL, index), get(CLONE, index))
+						);
+						
+						LOGGER.debug
+						(
+							"Successfully cloned element of {} array at index: {}",
+							CLASS.getCanonicalName( ),
+							index
+						);
+					}
+					catch (CloningFailedException e)
+					{
+						throw
+						(
+							new CloningFailedException
+							(
+								String.format
+								(
+									"Cloning element at index %d failed.",
+									index
+								),
+								e
+							)
+						);
+					}
 				}
 			}
 			else
@@ -303,12 +320,10 @@ public final class Cloner
 									"Found instance field: {}", FIELD
 								);
 								
-								// Don't create new instance of field if !=.
-								
 								FIELD.set
 								(
 									CLONE,
-									this.toClone
+									toClone
 									(
 										FIELD.get(ORIGINAL), FIELD.get(CLONE)
 									)
@@ -331,7 +346,7 @@ public final class Cloner
 				}
 				catch (InstantiationFailedException e)
 				{ // Instantiating CLASS failed.
-					throw new CloningFailedException(e);
+					throw new CloningFailedException("Cloning failed.", e);
 				}
 				catch (SecurityException e)
 				{ // Fields couldn't be made accessible.
@@ -358,9 +373,16 @@ public final class Cloner
 	 */
 	public <T> T toClone(final T ORIGINAL)
 	{
-		final T CLONE = toClone(ORIGINAL, null);
+		final T CLONE;
 		
-		CLONES.clear( );
+		try
+		{
+			CLONE = toClone(ORIGINAL, null);
+		}
+		finally
+		{
+			CLONES.clear( );
+		}
 		
 		return CLONE;
 	}

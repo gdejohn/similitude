@@ -5,6 +5,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -34,21 +35,21 @@ public final class Builder
 	 * values as per <a href="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5">JLS 4.12.5</a>,
 	 * and {@link Cloner#BASIC_TYPES}.
 	 */
-	private final Map<Class<?>, Object> DEFAULTS;
+	private final Map<Class<?>, Object> IMMUTABLE_DEFAULTS;
 	
 	{ // Instance initializer, executes at the beginning of every constructor.
-		DEFAULTS = new LinkedHashMap<Class<?>, Object>( );
+		IMMUTABLE_DEFAULTS = new LinkedHashMap<Class<?>, Object>( );
 		
-		DEFAULTS.put(byte.class, Byte.valueOf((byte)0));
-		DEFAULTS.put(short.class, Short.valueOf((short)0));
-		DEFAULTS.put(int.class, Integer.valueOf(0));
-		DEFAULTS.put(long.class, Long.valueOf(0L));
-		DEFAULTS.put(float.class, Float.valueOf(0.0f));
-		DEFAULTS.put(double.class, Double.valueOf(0.0d));
-		DEFAULTS.put(char.class, Character.valueOf('\u0000'));
-		DEFAULTS.put(boolean.class, Boolean.valueOf(false));
+		IMMUTABLE_DEFAULTS.put(byte.class, Byte.valueOf((byte)0));
+		IMMUTABLE_DEFAULTS.put(short.class, Short.valueOf((short)0));
+		IMMUTABLE_DEFAULTS.put(int.class, Integer.valueOf(0));
+		IMMUTABLE_DEFAULTS.put(long.class, Long.valueOf(0L));
+		IMMUTABLE_DEFAULTS.put(float.class, Float.valueOf(0.0f));
+		IMMUTABLE_DEFAULTS.put(double.class, Double.valueOf(0.0d));
+		IMMUTABLE_DEFAULTS.put(char.class, Character.valueOf('\u0000'));
+		IMMUTABLE_DEFAULTS.put(boolean.class, Boolean.valueOf(false));
 		
-		DEFAULTS.putAll(Cloner.BASIC_TYPES);
+		IMMUTABLE_DEFAULTS.putAll(Cloner.BASIC_TYPES);
 	}
 	
 	/**
@@ -62,7 +63,7 @@ public final class Builder
 	 * 
 	 * @return {@code null} if {@code CLASS} wasn't already mapped, else the previous mapping.
 	 */
-	public <T, U extends T> Object addDefault(final Class<T> CLASS, final U VALUE) // final Class<? extends T> CLASS?
+	public <T, U extends T> Object addDefault(final Class<T> CLASS, final U VALUE)
 	{
 		LOGGER.debug
 		(
@@ -71,7 +72,7 @@ public final class Builder
 			CLASS.getCanonicalName( )
 		);
 		
-		return DEFAULTS.put(CLASS, VALUE);
+		return IMMUTABLE_DEFAULTS.put(CLASS, VALUE);
 	}
 
 	/**
@@ -84,16 +85,16 @@ public final class Builder
 	 *
 	 * @return Default value associated with {@code CLASS}, or {@code null}.
 	 */
-	public <T, U extends T> U getDefault(final Class<T> CLASS) // final Class<? extends T> CLASS?
+	public <T, U extends T> U getDefault(final Class<T> CLASS)
 	{
 		/*
-		 * Classes are only added to DEFAULTS through addDefault( ), which uses
+		 * Classes are only added to IMMUTABLE_DEFAULTS through addDefault( ), which uses
 		 * a bound type parameter to statically ensure that the value to which
 		 * a class is mapped is assignable to that class. Therefore, this cast
 		 * will always succeed.
 		 */
 		@SuppressWarnings("unchecked")
-		final U VALUE = (U)DEFAULTS.get(CLASS);
+		final U VALUE = (U)IMMUTABLE_DEFAULTS.get(CLASS);
 		
 		LOGGER.debug
 		(
@@ -204,7 +205,7 @@ public final class Builder
 			
 			return null;
 		}
-		else if (DEFAULTS.containsKey(CLASS))
+		else if (IMMUTABLE_DEFAULTS.containsKey(CLASS))
 		{ // Base case (previously added immutable type), return default value.
 			return getDefault(CLASS);
 		}
@@ -233,6 +234,26 @@ public final class Builder
 		else if (CLASS.isArray( ))
 		{ // Base case, return empty array of CLASS's component type.
 			return instantiateArray(CLASS, DEFAULT_ARRAY_LENGTH);
+		}
+		else if (CLASS.isInterface( ))
+		{ // Base case, return dynamic proxy.
+			LOGGER.debug
+			(
+				"Creating proxy for interface {}.", CLASS.getCanonicalName( )
+			);
+			
+			return
+			(
+				CLASS.cast
+				(
+					Proxy.newProxyInstance
+					(
+						CLASS.getClassLoader( ),
+						new Class<?>[ ] {CLASS},
+						new Handler(this)
+					)
+				)
+			);
 		}
 		else
 		{ // Class type, reflectively invoke each constructor until one works.
@@ -371,8 +392,8 @@ public final class Builder
 			}
 			
 			/*
-			 * If the above for-each loop finishes without a constructor
-			 * completing normally, then instantiation has failed.
+			 * If the above loop finished without a constructor completing
+			 * normally, then instantiation has failed.
 			 */
 			throw
 			(
