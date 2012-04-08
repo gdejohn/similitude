@@ -1,6 +1,6 @@
 package org.gdejohn.similitude;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "javadoc"})
 public class CloningFailedException extends RuntimeException
 {
 	public CloningFailedException( )
@@ -18,7 +18,7 @@ public class CloningFailedException extends RuntimeException
 		super(CAUSE);
 	}
 	
-	public CloningFailedException(final String FORMAT, final Throwable CAUSE, final Object... ARGUMENTS)
+	public CloningFailedException(final Throwable CAUSE, final String FORMAT, final Object... ARGUMENTS)
 	{
 		super(String.format(FORMAT, ARGUMENTS), CAUSE);
 	}

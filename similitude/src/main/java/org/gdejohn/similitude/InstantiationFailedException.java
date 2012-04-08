@@ -1,6 +1,6 @@
 package org.gdejohn.similitude;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "javadoc"})
 public class InstantiationFailedException extends RuntimeException
 {
 	public InstantiationFailedException( )
@@ -18,7 +18,7 @@ public class InstantiationFailedException extends RuntimeException
 		super(CAUSE);
 	}
 	
-	public InstantiationFailedException(final String FORMAT, final Throwable CAUSE, final Object... ARGUMENTS)
+	public InstantiationFailedException(final Throwable CAUSE, final String FORMAT, final Object... ARGUMENTS)
 	{
 		super(String.format(FORMAT, ARGUMENTS), CAUSE);
 	}

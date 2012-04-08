@@ -1,14 +1,15 @@
 package org.gdejohn.similitude;
 
-import static org.slf4j.LoggerFactory.getLogger;
-
-import static java.lang.reflect.AccessibleObject.setAccessible;
 import static java.lang.reflect.Array.get;
 import static java.lang.reflect.Array.getLength;
 import static java.lang.reflect.Array.set;
-import static java.lang.reflect.Modifier.isStatic;
+import static org.slf4j.LoggerFactory.getLogger;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -22,6 +23,7 @@ import org.slf4j.Logger;
  * 
  * @author Griffin DeJohn
  */
+@SuppressWarnings("javadoc")
 public final class Cloner
 {
 	static final Logger LOGGER = getLogger(Cloner.class);
@@ -30,10 +32,9 @@ public final class Cloner
 	 * Wrapper types and {@code String} mapped to default values.
 	 * 
 	 * Wrapper types are mapped to the default values of their respective
-	 * primitve types as per <a href="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5">JLS 4.12.5</a>,
-	 * and {@code String} is mapped to the empty string. Primitives aren't
-	 * included here because primitive types can't be cloned directly by this
-	 * class, due to autoboxing.
+	 * primitive types as per <a href="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5">JLS 4.12.5</a>,
+	 * and {@code String} is mapped to the empty string. Primitives types
+	 * aren't included here because they're autoboxed during cloning.
 	 */
 	static final Map<Class<?>, Object> BASIC_TYPES;
 	
@@ -60,20 +61,58 @@ public final class Cloner
 		BASIC_TYPES.put(Boolean.class, Boolean.valueOf(false));
 		
 		BASIC_TYPES.put(String.class, "");
+		
+		// http://stackoverflow.com/questions/5124012/examples-of-immutable-classes
 	}
+	
+	private final boolean DETERMINE_IMMUTABLE;
 	
 	/**
 	 * Instantiates types that need to be deep-copied.
 	 */
-	private final Builder BUILDER = new Builder( );
+	final Builder BUILDER = new Builder( );
 	
 	/**
 	 * Immutable types, can be shallow-copied.
 	 */
-	private final Set<Class<?>> IMMUTABLE;
+	final Set<Class<?>> IMMUTABLE;
 	
-	{ // Instance initializer, executes at the beginning of every constructor.
-		IMMUTABLE = new LinkedHashSet<Class<?>>(BASIC_TYPES.keySet( ));
+	/**
+	 * Initializes all instance variables.
+	 * 
+	 * @param KNOWN_IMMUTABLE_TYPES Types known to be immutable, which can therefore be safely shallow-copied.
+	 * @param DETERMINE_IMMUTABLE Whether the resulting instance should attempt to reflectively determine immutability during cloning.
+	 */
+	private Cloner(final Set<Class<?>> KNOWN_IMMUTABLE_TYPES, final boolean DETERMINE_IMMUTABLE)
+	{
+		IMMUTABLE = new LinkedHashSet<Class<?>>(KNOWN_IMMUTABLE_TYPES);
+		
+		this.DETERMINE_IMMUTABLE = DETERMINE_IMMUTABLE;
+	}
+	
+	/**
+	 * Default constructor.
+	 * 
+	 * Immutable types are initialized to {@link #BASIC_TYPES}. The resulting
+	 * instance will not attempt to reflectively determine immutability during
+	 * cloning.
+	 */
+	public Cloner( )
+	{
+		this(BASIC_TYPES.keySet( ), false);
+	}
+	
+	/**
+	 * Creates a new cloner that will attempt to determine immutablity.
+	 * 
+	 * The resulting cloner has the same registered immutable types as
+	 * {@code this} cloner.
+	 * 
+	 * @return A new cloner that will attempt to reflectively determine immutablity.
+	 */
+	public Cloner determineImmutable( )
+	{
+		return new Cloner(IMMUTABLE, true);
 	}
 	
 	/**
@@ -109,12 +148,21 @@ public final class Cloner
 	 * @param VALUE The value to map {@code CLASS} to.
 	 * 
 	 * @return {@code true} if {@code CLASS} wasn't already registered.
+	 * 
+	 * @throws IllegalArgumentException If {@code CLASS} is an array type.
 	 */
 	public <T, U extends T> boolean register(final Class<T> CLASS, final U VALUE)
 	{
-		BUILDER.addDefault(CLASS, VALUE);
-		
-		return register(CLASS);
+		if (CLASS.isArray( ))
+		{
+			throw new IllegalArgumentException("Arrays aren't immutable.");
+		}
+		else
+		{
+			BUILDER.addDefault(CLASS, VALUE);
+			
+			return register(CLASS);
+		}
 	}
 	
 	/**
@@ -140,11 +188,14 @@ public final class Cloner
 	/**
 	 * Original objects that have already been cloned, mapped to their clones.
 	 * 
-	 * {@link #toClone(Object, Object)} maps every encountered object to its
-	 * instantiated clone. When the same object is encountered again, the
-	 * reference to its previously created clone is simply reused. This also
-	 * handles any-dimensional arrays containing themselves an arbitrary number
-	 * of times.
+	 * When cloning a given object, a new instance of that object's type is
+	 * created to be used as the clone, which that object is then associated
+	 * with in this map. Whenever that same object is encountered again, the
+	 * reference to its associated clone is simply reused. This also handles
+	 * any-dimensional arrays that contain themselves any number of times.
+	 * Overriding implementations of {@link java.lang.Object#equals(Object)}
+	 * and {@link java.lang.Object#hashCode()} are ignored. Rather, identity is
+	 * used.
 	 */
 	private Map<Object, Object> CLONES = new IdentityHashMap<Object, Object>( );
 	
@@ -152,20 +203,20 @@ public final class Cloner
 	 * Does all of the work for {@link #toClone(Object)}.
 	 * 
 	 * This method calls itself recursively to clone each element in a given
-	 * array, or each field in a given instance of a class type, and in
-	 * addition to the original object to be cloned, it passes itself a
+	 * array, or each instance field in a given instance of a class type, and
+	 * in addition to the original object to be cloned, it passes itself a
 	 * potential instance to use for the resulting clone that may have already
 	 * been instantiated higher in the call stack. If suitable, creating a new
 	 * instance of the original object's type, which can be very expensive, is
-	 * skipped. This shouldn't be called directly, since {@link #CLONES} is
-	 * only cleared in {@code toClone(Object)} once recursion is finished.
+	 * skipped. This isn't called directly, since {@link #CLONES} is only
+	 * cleared in {@code toClone(Object)} once recursion is finished.
 	 * 
 	 * @param ORIGINAL The object to create a deep copy of.
 	 * @param INSTANCE The potential instance to use for the resulting clone.
 	 * 
 	 * @return A deep copy of {@code ORIGINAL}.
 	 * 
-	 * @throws CloningFailedException If cloning {@code ORIGINAL} fails for any reason.
+	 * @throws CloningFailedException If cloning {@code ORIGINAL} fails for any other reason.
 	 */
 	private <T> T toClone(final T ORIGINAL, final T INSTANCE)
 	{
@@ -179,11 +230,16 @@ public final class Cloner
 		}
 		else
 		{
-			// Type-safe, since ORIGINAL is of type T.
+			// Cast is safe, since ORIGINAL is of type T.
 			@SuppressWarnings("unchecked")
-			final Class<T> CLASS = (Class<T>)ORIGINAL.getClass( );
+			final Class<? extends T> CLASS =
+			(
+				(Class<? extends T>)ORIGINAL.getClass( )
+			);
 			
-			if (CLASS.isEnum( ) || IMMUTABLE.contains(CLASS))
+			final TypeToken<?> TYPE = new TypeToken<Object>(CLASS, DETERMINE_IMMUTABLE);
+			
+			if (CLASS.isEnum( ) || TYPE.isImmutable(ORIGINAL))
 			{ // Base case, safe to shallow-copy.
 				CLONE = ORIGINAL;
 				
@@ -198,7 +254,7 @@ public final class Cloner
 			{
 				LOGGER.debug
 				(
-					"This object has already been cloned, shallow-copying."
+					"Already cloned, reusing reference to clone."
 				);
 				
 				CLONE = CLASS.cast(CLONES.get(ORIGINAL));
@@ -253,12 +309,9 @@ public final class Cloner
 						(
 							new CloningFailedException
 							(
-								String.format
-								(
-									"Cloning element at index %d failed.",
-									index
-								),
-								e
+								e,
+								"Cloning array element at index %d failed.",
+								index
 							)
 						);
 					}
@@ -271,19 +324,19 @@ public final class Cloner
 					"Cloning class type: {}", CLASS.getSimpleName( )
 				);
 				
-				try
+				if (INSTANCE != null && INSTANCE != ORIGINAL && INSTANCE.getClass( ).isAssignableFrom(CLASS))
 				{
-					if (INSTANCE != null && INSTANCE != ORIGINAL && INSTANCE.getClass( ).isAssignableFrom(CLASS))
-					{
-						CLONE = INSTANCE;
-						
-						LOGGER.debug
-						(
-							"Already instantiated class type: {}",
-							CLASS.getSimpleName( )
-						);
-					}
-					else
+					CLONE = INSTANCE;
+					
+					LOGGER.debug
+					(
+						"Already instantiated class type: {}",
+						CLASS.getSimpleName( )
+					);
+				}
+				else
+				{
+					try
 					{
 						CLONE = BUILDER.instantiate(CLASS);
 						
@@ -293,100 +346,82 @@ public final class Cloner
 							CLASS.getSimpleName( )
 						);
 					}
-					
-					CLONES.put(ORIGINAL, CLONE);
-					
-					Class<? super T> current = CLASS;
-					
-					do
-					{ // Traverse up class hierarchy to get inherited fields.
-						final Field[ ] FIELDS = current.getDeclaredFields( );
-						
-						setAccessible(FIELDS, true);
-						
-						for (final Field FIELD : FIELDS)
-						{
-							if (isStatic(FIELD.getModifiers( )))
-							{ // If static, ignore and skip to the next one.
-								LOGGER.debug
-								(
-									"Skipping static field: {}", FIELD
-								);
-							}
-							else
-							{ // Clone field in ORIGINAL, set result in CLONE.
-								LOGGER.debug
-								(
-									"Found instance field: {}", FIELD
-								);
-								
-								FIELD.set
-								(
-									CLONE,
-									toClone
-									(
-										FIELD.get(ORIGINAL), FIELD.get(CLONE)
-									)
-								);
-								
-								LOGGER.debug
-								(
-									"Successfully cloned field: {}", FIELD
-								);
-							}
-						}
-						
-						current = current.getSuperclass( );
+					catch (InstantiationFailedException e)
+					{ // Instantiating CLASS failed.
+						throw
+						(
+							new CloningFailedException
+							(
+								e,
+								"Couldn't instantiate class %s.",
+								CLASS.getSimpleName( )
+							)
+						);
 					}
-					while (current != null);
 				}
-				catch (CloningFailedException e)
-				{ // Cloning a field failed somewhere in the object graph.
-					throw
-					(
-						new CloningFailedException
+				
+				CLONES.put(ORIGINAL, CLONE);
+				
+				for (final Field FIELD : TYPE.getInstanceFields( ))
+				{ // Clone instance fields in ORIGINAL, set results in CLONE.
+					try
+					{
+						FIELD.setAccessible(true);
+						
+						final Object CLONE_FIELD =
 						(
-							"Cloning instance of class %s failed.",
-							e,
-							CLASS.getSimpleName( )
-						)
-					);
-				}
-				catch (InstantiationFailedException e)
-				{ // Instantiating CLASS failed.
-					throw
-					(
-						new CloningFailedException
+							toClone
+							(
+								FIELD.get(ORIGINAL), FIELD.get(CLONE)
+							)
+						);
+						
+						FIELD.set(CLONE, CLONE_FIELD);
+						
+						LOGGER.debug
 						(
-							"Creating new instance of class %s failed.",
-							e,
-							CLASS.getSimpleName( )
-						)
-					);
-				}
-				catch (SecurityException e)
-				{ // Fields couldn't be made accessible.
-					throw
-					(
-						new CloningFailedException
+							"Successfully cloned and set field: {}", FIELD
+						);
+					}
+					catch (CloningFailedException e)
+					{ // FIELD couldn't be cloned.
+						throw
 						(
-							"Fields for class %s couldn't be made accessible.",
-							e,
-							CLASS.getSimpleName( )
-						)
-					);
-				}
-				catch (IllegalAccessException e)
-				{ // A SecurityException should always be thrown before this.
-					throw
-					(
-						new CloningFailedException
+							new CloningFailedException
+							(
+								e,
+								"Couldn't clone field \"%s\" in class %s.",
+								FIELD,
+								CLASS.getSimpleName( )
+							)
+						);
+					}
+					catch (SecurityException e)
+					{ // FIELD couldn't be made accessible.
+						throw
 						(
-							"Fields for class %s couldn't be accessed.",
-							e,
-							CLASS.getSimpleName( )
-						)
-					);
+							new CloningFailedException
+							(
+								e,
+								"Field \"%s\" in class %s couldn't be set accessible.",
+								FIELD,
+								CLASS.getSimpleName( )
+							)
+						);
+					}
+					catch (IllegalAccessException e)
+					{ // SecurityException should always be thrown before this.
+						throw
+						(
+							new CloningFailedException
+							(
+								e,
+								"Field \"%s\" in class %s couldn't be accessed.",
+								FIELD,
+								CLASS.getSimpleName( )
+							)
+						);
+					}
 				}
 			}
 		}
@@ -417,5 +452,27 @@ public final class Cloner
 		}
 		
 		return CLONE;
+	}
+	
+	static class Foo<E>
+	{
+		class Bar<F extends E>
+		{
+			
+		}
+	}
+	
+	static abstract class Baz
+	{
+		abstract Foo<Number>.Bar<Integer> doStuff( );
+	}
+	
+	@SuppressWarnings("unused")
+	public static void main(String[ ] args) throws Exception
+	{
+		String o = "xyzzy";
+		CharSequence c = new Cloner( ).toClone((CharSequence)o);
+		System.out.println(java.util.Arrays.toString(new Builder( ).getTypeArguments(Baz.class.getDeclaredMethod("doStuff").getGenericReturnType( ), Collections.<TypeVariable<?>, Type>emptyMap( )).entrySet( ).toArray( )));
+		System.out.println(((ParameterizedType)new Object( ){void foo(java.util.List<String> l){ }}.getClass( ).getDeclaredMethod("foo", java.util.List.class).getGenericParameterTypes( )[0]).getRawType( ));
 	}
 }

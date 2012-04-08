@@ -4,13 +4,11 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,95 +20,180 @@ import org.slf4j.Logger;
  * 
  * @author Griffin DeJohn
  */
+@SuppressWarnings("javadoc")
 public final class Builder
 {
 	static final Logger LOGGER = getLogger(Builder.class);
 	
-	private static final Map<TypeVariable<?>, Type> EMPTY_MAP = Collections.emptyMap( );
+	/**
+	 * Primitive types mapped to their respective wrapper types.
+	 */
+	static final Map<Class<?>, Class<?>> WRAPPERS;
+	
+	static
+	{
+		/*
+		 * This map shouldn't change at runtime, so set the initial capacity to
+		 * the maximum number of entries that will be added (eight mappings,
+		 * one for each primitive type) and the load factor to just above one.
+		 * No wasted space, no rehashing.
+		 */
+		WRAPPERS = new LinkedHashMap<Class<?>, Class<?>>(8, Math.nextUp(1.0f));
+	}
 	
 	/**
-	 * Default length for new arrays.
+	 * Maps the given primitive type to its corresponding wrapper.
 	 * 
-	 * Arrays created by {@link #instantiateArray(Class, int)} are initialized
-	 * to this length.
+	 * The type parameter {@code T} statically ensures that PRIMITIVE and
+	 * WRAPPER are of the same type.
+	 * 
+	 * @param PRIMITIVE The primitive type to map.
+	 * @param WRAPPER The corresponding wrapper to map to.
 	 */
-	private final int DEFAULT_ARRAY_LENGTH = 0;
+	private static <T> void add(final Class<T> PRIMITIVE, final Class<T> WRAPPER)
+	{
+		if (PRIMITIVE.isPrimitive( ))
+		{
+			if (WRAPPER.isPrimitive( ))
+			{
+				throw new RuntimeException("WRAPPER must not be primitive.");
+			}
+			else if (WRAPPERS.put(PRIMITIVE, WRAPPER) == null)
+			{ // No previous mapping.
+				return;
+			}
+			else
+			{ // If put( ) didn't return null, then a mapping already existed.
+				throw new RuntimeException("PRIMITIVE already mapped.");
+			}
+		}
+		else
+		{
+			throw
+			(
+				new RuntimeException
+				(
+					"PRIMITIVE must represent a primitive type."
+				)
+			);
+		}
+	}
+	
+	static
+	{ // Map the primitive types to their corresponding wrappers.
+		add(byte.class, Byte.class);
+		add(short.class, Short.class);
+		add(int.class, Integer.class);
+		add(long.class, Long.class);
+		add(float.class, Float.class);
+		add(double.class, Double.class);
+		add(char.class, Character.class);
+		add(boolean.class, Boolean.class);
+	}
+	
+	/**
+	 * Gets the wrapper corresponding to the given primitive type.
+	 * 
+	 * @param PRIMITIVE The primitive type for which to get the corresponding wrapper.
+	 * 
+	 * @return The wrapper corresponding to {@code PRIMITIVE}.
+	 */
+	private static <T> Class<T>	wrap(final Class<T> PRIMITIVE)
+	{
+		/*
+		 * Mappings are only added to WRAPPERS through add( ), which only
+		 * allows a given mapping if it would allow this cast to succeed.
+		 */
+		@SuppressWarnings("unchecked")
+		final Class<T> WRAPPER =
+		(
+			(Class<T>)WRAPPERS.get(PRIMITIVE)
+		);
+		
+		if (WRAPPER == null)
+		{
+			throw new RuntimeException("No wrapper mapping found.");
+		}
+		else
+		{
+			return WRAPPER;
+		}
+	}
 	
 	/**
 	 * Immutable types, mapped to default values.
 	 * 
-	 * Initialized to include the primitive types, mapped to their default
-	 * values as per <a href="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5">JLS 4.12.5</a>,
-	 * and {@link Cloner#BASIC_TYPES}.
+	 * Initialized to include the wrapper types and {@code String}.
+	 * 
+	 * @see Cloner#BASIC_TYPES
 	 */
 	private final Map<Class<?>, Object> IMMUTABLE_DEFAULTS;
 	
 	{ // Instance initializer, executes at the beginning of every constructor.
-		IMMUTABLE_DEFAULTS = new LinkedHashMap<Class<?>, Object>( );
-		
-		IMMUTABLE_DEFAULTS.put(byte.class, Byte.valueOf((byte)0));
-		IMMUTABLE_DEFAULTS.put(short.class, Short.valueOf((short)0));
-		IMMUTABLE_DEFAULTS.put(int.class, Integer.valueOf(0));
-		IMMUTABLE_DEFAULTS.put(long.class, Long.valueOf(0L));
-		IMMUTABLE_DEFAULTS.put(float.class, Float.valueOf(0.0f));
-		IMMUTABLE_DEFAULTS.put(double.class, Double.valueOf(0.0d));
-		IMMUTABLE_DEFAULTS.put(char.class, Character.valueOf('\u0000'));
-		IMMUTABLE_DEFAULTS.put(boolean.class, Boolean.valueOf(false));
-		
-		IMMUTABLE_DEFAULTS.putAll(Cloner.BASIC_TYPES);
+		IMMUTABLE_DEFAULTS = new LinkedHashMap<Class<?>, Object>(Cloner.BASIC_TYPES);
 	}
 	
 	/**
 	 * Maps an immutable class to a default value.
 	 * 
 	 * The bound type parameter {@code U} statically ensures that {@code VALUE}
-	 * is assignable to type {@code T}.
+	 * is assignable to {@code TYPE}. Primitive types are a special case. They
+	 * use the default values of their corresponding wrappers and cannot
+	 * themselves be mapped. Attempting to do so will throw an exception.
 	 * 
-	 * @param CLASS The immutable class.
-	 * @param VALUE The default value for {@code CLASS}.
+	 * @param TYPE The immutable type.
+	 * @param VALUE The default value for {@code TYPE}.
 	 * 
-	 * @return {@code null} if {@code CLASS} wasn't already mapped, else the previous mapping.
+	 * @return {@code null} if {@code TYPE} wasn't already mapped, else the previous mapping.
+	 * 
+	 * @throws IllegalArgumentException If {@code TYPE} is primitive.
 	 */
-	public <T, U extends T> Object addDefault(final Class<T> CLASS, final U VALUE)
+	public <T, U extends T> Object addDefault(final Class<T> TYPE, final U VALUE)
 	{
 		LOGGER.debug
 		(
 			"Adding default value \"{}\" for type {}.",
 			VALUE,
-			CLASS.getSimpleName( )
+			TYPE.getSimpleName( )
 		);
 		
-		return IMMUTABLE_DEFAULTS.put(CLASS, VALUE);
+		if (TYPE.isPrimitive( ))
+		{
+			throw
+			(
+				new IllegalArgumentException
+				(
+					"Can't map primitive type. Use its wrapper."
+				)
+			);
+		}
+		else
+		{
+			return IMMUTABLE_DEFAULTS.put(TYPE, VALUE);
+		}
 	}
 
 	/**
-	 * Gets the default value for the given class.
+	 * Gets the default value for the given type.
 	 * 
-	 * The class must have been previously registered as immutable with
-	 * {@link #addDefault}, or {@code null} will be returned.
+	 * The type must have been previously registered as immutable with {@link
+	 * #addDefault}, or {@code null} will be returned. Primitive types aren't
+	 * actually mapped. Instead, the default values of their corresponding
+	 * wrapper types are used.
 	 *
-	 * @param CLASS The class for which to get the default value.
+	 * @param TYPE The type for which to get the default value.
 	 *
-	 * @return Default value associated with {@code CLASS}, or {@code null}.
+	 * @return Default value associated with {@code TYPE}, or {@code null}.
 	 */
-	public <T, U extends T> U getDefault(final Class<T> CLASS)
+	public <T> T getDefault(final Class<T> TYPE)
 	{
-		/*
-		 * Classes are only added to IMMUTABLE_DEFAULTS through addDefault( ), which uses
-		 * a bound type parameter to statically ensure that the value to which
-		 * a class is mapped is assignable to that class. Therefore, this cast
-		 * will always succeed.
-		 */
-		@SuppressWarnings("unchecked")
-		final U VALUE = (U)IMMUTABLE_DEFAULTS.get(CLASS);
-		
 		LOGGER.debug
 		(
 			"Getting default value for type {}.",
-			CLASS.getSimpleName( )
+			TYPE.getSimpleName( )
 		);
 		
-		return VALUE;
+		return TYPE.cast(IMMUTABLE_DEFAULTS.get(TYPE));
 	}
 	
 	/**
@@ -130,13 +213,31 @@ public final class Builder
 	{
 		LOGGER.debug
 		(
-			"Instantiating array of type {} and length {}.",
+			"Instantiating array of type {} and dimensions: {}",
 			TYPE.getSimpleName( ),
 			LENGTH
 		);
 		
-		return TYPE.cast(Array.newInstance(TYPE.getComponentType( ), LENGTH));
+		return
+		(
+			TYPE.cast
+			(
+				Array.newInstance
+				(
+					TYPE.getComponentType( ),
+					LENGTH
+				)
+			)
+		);
 	}
+	
+	/**
+	 * Default length for new arrays.
+	 * 
+	 * Arrays created by {@link #instantiateArray(Class, int)} are initialized
+	 * to this length.
+	 */
+	final int DEFAULT_ARRAY_LENGTH = 0;
 	
 	/**
 	 * Gets the constructors for the given class.
@@ -183,31 +284,39 @@ public final class Builder
 			(
 				new InstantiationFailedException
 				(
-					"No available constructors for: {}",
 					e,
+					"No available constructors for: {}",
 					CLASS.getSimpleName( )
 				)
 			);
 		}
 	}
+	
+	/**
+	 * The empty map of type variables to types.
+	 * 
+	 * Used for types that don't declare type parameters.
+	 */
+	private static final Map<TypeVariable<?>, Type> EMPTY_MAP = Collections.emptyMap( );
 
 	/**
 	 * Maps type variables to supplied type arguments.
 	 * 
 	 * @param GENERIC_TYPE The generic type with its type arguments.
+	 * @param OLD Other type arguments in scope.
 	 * 
 	 * @return Type variables mapped to their arguments, or the empty map if no type variables are declared.
 	 */
-	public Map<TypeVariable<?>, Type> getTypeArguments(final Type GENERIC_TYPE)
+	public Map<TypeVariable<?>, Type> getTypeArguments(final Type TYPE, final Map<TypeVariable<?>, Type> OLD, final Object... ARGS)
 	{
-		if (GENERIC_TYPE instanceof ParameterizedType)
+		if (TYPE instanceof ParameterizedType)
 		{
 			final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS =
 			(
 				new LinkedHashMap<TypeVariable<?>, Type>( )
 			);
 			
-			Type current = GENERIC_TYPE;
+			Type current = TYPE;
 			
 			do
 			{
@@ -225,11 +334,30 @@ public final class Builder
 				
 				for (int index = 0; index < PARAMETERS.length; index++)
 				{
-					TYPE_ARGUMENTS.put
-					(
-						PARAMETERS[index],
-						ARGUMENTS[index]
-					);
+					if (ARGUMENTS[index] instanceof Class)
+					{
+						LOGGER.debug("{} parameterized by class type: {}", PARAMETERS[index], ARGUMENTS[index]);
+						
+						TYPE_ARGUMENTS.put
+						(
+							PARAMETERS[index],
+							(Class<?>)ARGUMENTS[index]
+						);
+					}
+					else if (ARGUMENTS[index] instanceof TypeVariable)
+					{
+						LOGGER.debug("{} parameterized by type argument: {}", PARAMETERS[index], OLD.get(ARGUMENTS[index]));
+						
+						TYPE_ARGUMENTS.put
+						(
+							PARAMETERS[index],
+							OLD.get(ARGUMENTS[index])
+						);
+					}
+					else
+					{
+						// Need to look through constructor args. GenericArrayType? If WildcardType, use bounds?
+					}
 				}
 				
 				current = ((ParameterizedType)current).getOwnerType( );
@@ -245,44 +373,50 @@ public final class Builder
 	}
 	
 	/**
-	 * Creates an instance of the given class.
+	 * Creates an instance of the given type, which may be parameterized.
 	 * 
-	 * Instantiation can fail for a variety of reasons. If a fatal exception
-	 * occurs, an {@code InstantiationFailedException} wrapping it is thrown to
-	 * the caller. If instantiation fails simply because a working constructor
-	 * couldn't be found, the problems that were encountered are detailed in
-	 * logging messages. See {@link http://www.slf4j.org/codes.html#StaticLoggerBinder}
-	 * for instructions on how to enable logging.
+	 * {@link #instantiate(Class)} delegates to this method.
 	 * 
-	 * @param CLASS The class to instantiate.
-	 * @param TYPE_ARGUMENTS Type parameters mapped to arguments.
+	 * @param TYPE The type to instantiate.
+	 * @param TYPE_ARGUMENTS Type variables declared or inherited by {@code TYPE}, mapped to their respective arguments.
 	 * 
-	 * @return An instance of {@code CLASS}.
+	 * @return An instance of {@code TYPE}.
 	 * 
-	 * @throws InstantiationFailedException If instantiating {@code CLASS} fails for any reason.
+	 * @throws InstantiationFailedException If instantiating {@code TYPE} fails for any reason.
 	 */
-	public <T> T instantiate(final Class<T> CLASS, final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS)
+	<T> T instantiate(final Class<T> TYPE, final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS)
 	{
-		if (CLASS == null)
+		if (TYPE == null)
 		{
 			LOGGER.debug("Class argument is null.");
 			
 			return null;
 		}
-		else if (IMMUTABLE_DEFAULTS.containsKey(CLASS))
-		{ // Base case (previously added immutable type), return default value.
-			return getDefault(CLASS);
+		else if (TYPE.isPrimitive( ))
+		{
+			/*
+			 * The default values are all reference types, which throw
+			 * ClassCastExceptions when reflectively cast to primitive types.
+			 * As a workaround, the corresponding wrapper must be used, which
+			 * works because for any primitive type, P, and its wrapper, W,
+			 * P.class and W.class are both of type Class<W>.
+			 */
+			return getDefault(wrap(TYPE));
 		}
-		else if (CLASS.isEnum( ))
+		else if (IMMUTABLE_DEFAULTS.containsKey(TYPE))
+		{ // Base case (previously added immutable type), return default value.
+			return getDefault(TYPE);
+		}
+		else if (TYPE.isEnum( ))
 		{ // Base case, return first declared constant.
 			LOGGER.debug
 			(
-				"Instantiating enum type: {}", CLASS.getSimpleName( )
+				"Instantiating enum type: {}", TYPE.getSimpleName( )
 			);
 			
 			try
 			{
-				return CLASS.getEnumConstants( )[0];
+				return TYPE.getEnumConstants( )[0];
 			}
 			catch (ArrayIndexOutOfBoundsException e)
 			{
@@ -290,32 +424,32 @@ public final class Builder
 				(
 					new InstantiationFailedException
 					(
-						"Enum type %s declares no constants.",
 						e,
-						CLASS.getSimpleName( )
+						"Enum type %s declares no constants.",
+						TYPE.getSimpleName( )
 					)
 				);
 			}
 		}
-		else if (CLASS.isArray( ))
+		else if (TYPE.isArray( ))
 		{ // Base case, return empty array of CLASS's component type.
-			return instantiateArray(CLASS, DEFAULT_ARRAY_LENGTH);
+			return instantiateArray(TYPE, DEFAULT_ARRAY_LENGTH);
 		}
-		else if (CLASS.isInterface( ))
+		else if (TYPE.isInterface( ))
 		{ // Base case, return dynamic proxy.
 			LOGGER.debug
 			(
-				"Creating proxy for interface {}.", CLASS.getSimpleName( )
+				"Creating proxy for interface {}.", TYPE.getSimpleName( )
 			);
 			
 			return
 			(
-				CLASS.cast
+				TYPE.cast
 				(
 					Proxy.newProxyInstance
 					(
-						CLASS.getClassLoader( ),
-						new Class<?>[ ] {CLASS},
+						TYPE.getClassLoader( ),
+						new Class<?>[ ] {TYPE},
 						new Handler(this, TYPE_ARGUMENTS)
 					)
 				)
@@ -325,12 +459,15 @@ public final class Builder
 		{ // Class type, reflectively invoke each constructor until one works.
 			LOGGER.debug
 			(
-				"Instantiating class type: {}", CLASS.getSimpleName( )
+				"Instantiating class type: {}", TYPE.getSimpleName( )
 			);
 			
-			for (final Constructor<?> CONSTRUCTOR : getConstructors(CLASS))
+			for (final Constructor<?> CONSTRUCTOR : getConstructors(TYPE))
 			{
-				LOGGER.debug("Found constructor: {}", CONSTRUCTOR);
+				LOGGER.debug
+				(
+					"Found constructor: {}", CONSTRUCTOR.toGenericString( )
+				);
 				
 				try
 				{
@@ -349,7 +486,7 @@ public final class Builder
 					 */
 					final Constructor<T> GENERIC_CONSTRUCTOR =
 					(
-						CLASS.getDeclaredConstructor(PARAMETERS)
+						TYPE.getDeclaredConstructor(PARAMETERS)
 					);
 					
 					/*
@@ -382,7 +519,11 @@ public final class Builder
 								instantiate
 								(
 									PARAMETERS[index],
-									getTypeArguments(GENERIC_PARAMETERS[index])
+									getTypeArguments
+									(
+										GENERIC_PARAMETERS[index],
+										TYPE_ARGUMENTS
+									)
 								)
 							);
 							
@@ -407,7 +548,7 @@ public final class Builder
 					LOGGER.debug
 					(
 						"Invoking constructor \"{}\" with arguments: {}",
-						GENERIC_CONSTRUCTOR,
+						GENERIC_CONSTRUCTOR.toGenericString( ),
 						ARGUMENTS
 					);
 					
@@ -464,9 +605,9 @@ public final class Builder
 					(
 						new InstantiationFailedException
 						(
-							"Static initialization failed for type %s.",
 							e,
-							CLASS.getSimpleName( )
+							"Static initialization failed for type %s.",
+							TYPE.getSimpleName( )
 						)
 					);
 				}
@@ -481,45 +622,30 @@ public final class Builder
 				new InstantiationFailedException
 				(
 					"No working constructor was found for class %s.",
-					CLASS.getSimpleName( )
+					TYPE.getSimpleName( )
 				)
 			);
 		}
 	}
 	
+	/**
+	 * Creates an instance of the given type.
+	 * 
+	 * Instantiation can fail for a variety of reasons. If a fatal exception
+	 * occurs, an {@code InstantiationFailedException} wrapping it is thrown to
+	 * the caller. If instantiation fails simply because a working constructor
+	 * couldn't be found, the problems that were encountered are detailed in
+	 * logging messages. See {@link http://www.slf4j.org/codes.html#StaticLoggerBinder}
+	 * for instructions on how to enable logging.
+	 * 
+	 * @param TYPE The type to instantiate.
+	 * 
+	 * @return An instance of {@code TYPE}.
+	 * 
+	 * @throws InstantiationFailedException If instantiating {@code TYPE} fails for any reason.
+	 */
 	public <T> T instantiate(final Class<T> TYPE)
 	{
 		return instantiate(TYPE, EMPTY_MAP);
-	}
-	
-	public Object instantiate(final Type GENERIC_TYPE)
-	{
-		if (GENERIC_TYPE instanceof Class)
-		{
-			return instantiate((Class<?>)GENERIC_TYPE);
-		}
-		else if (GENERIC_TYPE instanceof GenericArrayType)
-		{
-			return null;
-		}
-		else if (GENERIC_TYPE instanceof ParameterizedType)
-		{
-			return instantiate((Class<?>)((ParameterizedType)GENERIC_TYPE).getRawType( ), getTypeArguments(GENERIC_TYPE));
-		}
-		else if (GENERIC_TYPE instanceof WildcardType)
-		{
-			return null;
-		}
-		else if (GENERIC_TYPE instanceof TypeVariable)
-		{
-			return null;
-		}
-		else
-		{
-			throw new InstantiationFailedException
-			(
-				"Type %s not recognized.", GENERIC_TYPE
-			);
-		}
 	}
 }

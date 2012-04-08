@@ -2,9 +2,11 @@ package org.gdejohn.similitude;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Map;
@@ -45,6 +47,31 @@ class Handler implements InvocationHandler
 		this.TYPE_ARGUMENTS = TYPE_ARGUMENTS;
 	}
 	
+	Class<?> reify(final Type TYPE, final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS)
+	{
+		if (TYPE instanceof Class)
+		{
+			return (Class<?>)TYPE;
+		}
+		else if (TYPE_ARGUMENTS.containsKey(TYPE))
+		{
+			return reify(TYPE_ARGUMENTS.get(TYPE), TYPE_ARGUMENTS);
+		}
+		else if (TYPE instanceof GenericArrayType)
+		{
+			return
+			(
+				reify
+				(
+					((GenericArrayType)TYPE).getGenericComponentType( ),
+					TYPE_ARGUMENTS
+				)
+			);
+		}
+		
+		return null;
+	}
+	
 	/**
 	 * Processes a method invocation on a proxy instance.
 	 * 
@@ -64,25 +91,111 @@ class Handler implements InvocationHandler
 	{
 		LOGGER.debug
 		(
-			"Method \"{}\" invoked on proxy object.",
-			METHOD.toGenericString( )
+			"Method \"{}\" invoked on proxy instance implementing: {}",
+			METHOD.toGenericString( ),
+			PROXY.getClass( ).getInterfaces( )
 		);
 		
-		final Type GENERIC_RETURN_TYPE = METHOD.getGenericReturnType( );
+		final Type RETURN_TYPE = METHOD.getGenericReturnType( );
 		
-		if (GENERIC_RETURN_TYPE instanceof Class)
+		if (RETURN_TYPE instanceof Class)
 		{
 			return BUILDER.instantiate(METHOD.getReturnType( ));
 		}
-		else if (GENERIC_RETURN_TYPE instanceof TypeVariable)
+		else if (RETURN_TYPE instanceof GenericArrayType)
 		{
-			if (TYPE_ARGUMENTS != null && TYPE_ARGUMENTS.containsKey(GENERIC_RETURN_TYPE))
+			LOGGER.debug
+			(
+				"Generic array return type for method: {}",
+				METHOD.toGenericString( )
+			);
+			
+			Type componentType = RETURN_TYPE;
+			
+			int dimensions = 0;
+			
+			do
+			{
+				componentType =
+				(
+					((GenericArrayType)componentType).getGenericComponentType( )
+				);
+				
+				dimensions++;
+			}
+			while (componentType instanceof GenericArrayType);
+			
+			final Class<?> ACTUAL_COMPONENT_TYPE;
+			
+			if (componentType instanceof ParameterizedType)
+			{
+				ACTUAL_COMPONENT_TYPE =
+				(
+					(Class<?>)((ParameterizedType)componentType).getRawType( )
+				);
+			}
+			else if (componentType instanceof TypeVariable)
+			{
+				ACTUAL_COMPONENT_TYPE =
+				(
+					ARGUMENTS[0].getClass( )
+				);
+			}
+			else
+			{
+				throw
+				(
+					new InstantiationFailedException
+					(
+						"Couldn't reify generic return type."
+					)
+				);
+			}
+			
+			return
+			(
+				Array.newInstance
+				(
+					ACTUAL_COMPONENT_TYPE, new int[dimensions] // (Class<?>)componentType
+				)
+			);
+		}
+		else if (RETURN_TYPE instanceof ParameterizedType)
+		{
+			LOGGER.debug
+			(
+				"Paramaterized return type for method: {}",
+				METHOD.toGenericString( )
+			);
+			
+			return
+			(
+				BUILDER.instantiate
+				(
+					(Class<?>)((ParameterizedType)RETURN_TYPE).getRawType( ),
+					BUILDER.getTypeArguments
+					(
+						RETURN_TYPE, TYPE_ARGUMENTS, ARGUMENTS
+					)
+				)
+			);
+		}
+		else if (RETURN_TYPE instanceof TypeVariable)
+		{
+			LOGGER.debug
+			(
+				"Type variable return type for method: {}",
+				METHOD.toGenericString( )
+			);
+			
+			if (TYPE_ARGUMENTS != null && TYPE_ARGUMENTS.containsKey(RETURN_TYPE))
 			{
 				return
 				(
 					BUILDER.instantiate
 					(
-						TYPE_ARGUMENTS.get(GENERIC_RETURN_TYPE)
+						(Class<?>)TYPE_ARGUMENTS.get(RETURN_TYPE),
+						TYPE_ARGUMENTS
 					)
 				);
 			}
@@ -98,12 +211,12 @@ class Handler implements InvocationHandler
 						
 						if(ARGUMENTS[index] != null)
 						{
-							if (GENERIC_RETURN_TYPE.equals(PARAMETERS[index]))
+							if (RETURN_TYPE.equals(PARAMETERS[index]))
 							{
 								LOGGER.debug
 								(
 									"Generic return type {} parameterized by argument type {}.",
-									GENERIC_RETURN_TYPE,
+									RETURN_TYPE,
 									ARGUMENTS[index].getClass( ).getSimpleName( )
 								);
 								
@@ -114,7 +227,7 @@ class Handler implements InvocationHandler
 							}
 							else if(PARAMETERS[index] instanceof GenericArrayType)
 							{
-								if (GENERIC_RETURN_TYPE.equals(((GenericArrayType)PARAMETERS[index]).getGenericComponentType( )))
+								if (RETURN_TYPE.equals(((GenericArrayType)PARAMETERS[index]).getGenericComponentType( )))
 								{
 									return BUILDER.instantiate(ARGUMENTS[index].getClass( ).getComponentType( ));
 								}
@@ -150,5 +263,30 @@ class Handler implements InvocationHandler
 				)
 			);
 		}
+	}
+	
+	static abstract class Foo<E, F extends E, G extends F, H extends Number & Comparable<Comparable<Comparable<H>>> & java.util.List<? super G>>
+	{
+		abstract H bar( );
+		
+		abstract java.util.List<? super G>[ ] foo(java.util.List<? super Comparable<G>> arg);
+		
+		abstract <T> T[ ][ ] baz( );
+		
+		class Inner
+		{
+			H method( )
+			{
+				return null;
+			}
+		}
+	}
+	
+	public static void main(String[ ] args) throws Exception
+	{
+		System.out.println("" instanceof CharSequence);
+		Type type = Handler.Foo.class.getDeclaredMethod("baz").getGenericReturnType( );
+		System.out.println(((GenericArrayType) ((GenericArrayType) type).getGenericComponentType( )).getGenericComponentType( ));
+		//System.out.println(java.util.Arrays.toString(((TypeVariable<?>)((TypeVariable<?>)(((TypeVariable<?>)((ParameterizedType)((TypeVariable<?>)type).getBounds( )[2]).getActualTypeArguments( )[0])).getBounds( )[0]).getBounds( )[0]).getBounds( )));
 	}
 }
