@@ -3,6 +3,7 @@ package org.gdejohn.similitude;
 import static java.lang.reflect.Array.get;
 import static java.lang.reflect.Array.getLength;
 import static java.lang.reflect.Array.set;
+import static org.gdejohn.similitude.TypeToken.getTypeOf;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.lang.reflect.Field;
@@ -230,16 +231,11 @@ public final class Cloner
 		}
 		else
 		{
-			// Cast is safe, since ORIGINAL is of type T.
-			@SuppressWarnings("unchecked")
-			final Class<? extends T> CLASS =
-			(
-				(Class<? extends T>)ORIGINAL.getClass( )
-			);
+			final TypeToken<? extends T> TYPE = getTypeOf(ORIGINAL); // new TypeToken2<Object>(CLASS, DETERMINE_IMMUTABLE);
 			
-			final TypeToken<?> TYPE = new TypeToken<Object>(CLASS, DETERMINE_IMMUTABLE);
+			final Class<? extends T> CLASS = TYPE.getRawType( );
 			
-			if (CLASS.isEnum( ) || TYPE.isImmutable(ORIGINAL))
+			if (CLASS.isEnum( ) || IMMUTABLE.contains(CLASS))
 			{ // Base case, safe to shallow-copy.
 				CLONE = ORIGINAL;
 				
@@ -362,7 +358,7 @@ public final class Cloner
 				
 				CLONES.put(ORIGINAL, CLONE);
 				
-				for (final Field FIELD : TYPE.getInstanceFields( ))
+				for (final Field FIELD : TYPE.getAllInstanceFields( ))
 				{ // Clone instance fields in ORIGINAL, set results in CLONE.
 					try
 					{
@@ -370,10 +366,7 @@ public final class Cloner
 						
 						final Object CLONE_FIELD =
 						(
-							toClone
-							(
-								FIELD.get(ORIGINAL), FIELD.get(CLONE)
-							)
+							toClone(FIELD.get(ORIGINAL), FIELD.get(CLONE))
 						);
 						
 						FIELD.set(CLONE, CLONE_FIELD);

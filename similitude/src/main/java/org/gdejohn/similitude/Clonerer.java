@@ -79,20 +79,20 @@ public class Clonerer
 	
 	private final boolean CHECK_SERIALIZABLE;
 	
-	private final Map<TypeToken<?>, Cloning.ForType<?>> TYPE_CLONERS;
+	private final Map<TypeToken2<?>, Cloning.ForType<?>> TYPE_CLONERS;
 	
-	private final Set<TypeToken<?>> IMMUTABLE;
+	private final Set<TypeToken2<?>> IMMUTABLE;
 	
-	private final Set<TypeToken<? extends Cloneable>> CLONEABLE;
+	private final Set<TypeToken2<? extends Cloneable>> CLONEABLE;
 	
-	private final Set<TypeToken<? extends Serializable>> SERIALIZABLE;
+	private final Set<TypeToken2<? extends Serializable>> SERIALIZABLE;
 	
 	public class ReflectionCloner implements Cloning
 	{
 		@Override
 		public <T> T toClone(final T ORIGINAL)
 		{
-			final TypeToken<T> TYPE = new TypeToken<T>(ORIGINAL.getClass( ));
+			final TypeToken2<T> TYPE = new TypeToken2<T>(ORIGINAL.getClass( ));
 			
 			if (TYPE_CLONERS.containsKey(TYPE))
 			{
@@ -117,7 +117,7 @@ public class Clonerer
 			}
 			else if (CHECK_CLONEABLE && TYPE instanceof Cloneable)
 			{
-				CLONEABLE.add(new TypeToken<Cloneable>(TYPE));
+				CLONEABLE.add(new TypeToken2<Cloneable>(TYPE));
 				
 				return Cloners.CLONEABLE.toClone(ORIGINAL);
 			}
@@ -127,7 +127,7 @@ public class Clonerer
 			}
 			else if (CHECK_SERIALIZABLE && TYPE instanceof Serializable)
 			{
-				SERIALIZABLE.add(new TypeToken<Serializable>(TYPE));
+				SERIALIZABLE.add(new TypeToken2<Serializable>(TYPE));
 				
 				return Cloners.SERIALIZABLE.toClone(ORIGINAL);
 			}
@@ -145,10 +145,10 @@ public class Clonerer
 		final boolean CHECK_IMMUTABLE,
 		final boolean CHECK_CLONEABLE,
 		final boolean CHECK_SERIALIZABLE,
-		final Map<TypeToken<?>, Cloning.ForType<?>> TYPE_CLONERS,
-		final Set<TypeToken<?>> IMMUTABLE,
-		final Set<TypeToken<? extends Cloneable>> CLONEABLE,
-		final Set<TypeToken<? extends Serializable>> SERIALIZABLE,
+		final Map<TypeToken2<?>, Cloning.ForType<?>> TYPE_CLONERS,
+		final Set<TypeToken2<?>> IMMUTABLE,
+		final Set<TypeToken2<? extends Cloneable>> CLONEABLE,
+		final Set<TypeToken2<? extends Serializable>> SERIALIZABLE,
 		final Cloning DEFAULT_STRATEGY
 	)
 	{ // body
@@ -160,7 +160,7 @@ public class Clonerer
 		
 		this.TYPE_CLONERS =
 		(
-			new LinkedHashMap<TypeToken<?>, Cloning.ForType<?>>
+			new LinkedHashMap<TypeToken2<?>, Cloning.ForType<?>>
 			(
 				TYPE_CLONERS
 			)
@@ -168,7 +168,7 @@ public class Clonerer
 		
 		this.IMMUTABLE =
 		(
-			new LinkedHashSet<TypeToken<?>>
+			new LinkedHashSet<TypeToken2<?>>
 			(
 				IMMUTABLE
 			)
@@ -176,7 +176,7 @@ public class Clonerer
 		
 		this.CLONEABLE =
 		(
-			new LinkedHashSet<TypeToken<? extends Cloneable>>
+			new LinkedHashSet<TypeToken2<? extends Cloneable>>
 			(
 				CLONEABLE
 			)
@@ -184,7 +184,7 @@ public class Clonerer
 		
 		this.SERIALIZABLE =
 		(
-			new LinkedHashSet<TypeToken<? extends Serializable>>
+			new LinkedHashSet<TypeToken2<? extends Serializable>>
 			(
 				SERIALIZABLE
 			)
@@ -203,10 +203,10 @@ public class Clonerer
 			false,
 			false,
 			false,
-			Collections.<TypeToken<?>, Cloning.ForType<?>>emptyMap( ),
-			Collections.<TypeToken<?>>emptySet( ),
-			Collections.<TypeToken<? extends Cloneable>>emptySet( ),
-			Collections.<TypeToken<? extends Serializable>>emptySet( ),
+			Collections.<TypeToken2<?>, Cloning.ForType<?>>emptyMap( ),
+			Collections.<TypeToken2<?>>emptySet( ),
+			Collections.<TypeToken2<? extends Cloneable>>emptySet( ),
+			Collections.<TypeToken2<? extends Serializable>>emptySet( ),
 			null
 		);
 	}
@@ -283,7 +283,7 @@ public class Clonerer
 		);
 	}
 	
-	public Clonerer withTypeCloners(final Map<TypeToken<?>, Cloning.ForType<?>> TYPE_CLONERS)
+	public Clonerer withTypeCloners(final Map<TypeToken2<?>, Cloning.ForType<?>> TYPE_CLONERS)
 	{
 		return
 		(
@@ -301,7 +301,7 @@ public class Clonerer
 		);
 	}
 	
-	public Clonerer withImmutableTypes(final Set<TypeToken<?>> IMMUTABLE)
+	public Clonerer withImmutableTypes(final Set<TypeToken2<?>> IMMUTABLE)
 	{
 		return
 		(
@@ -319,7 +319,7 @@ public class Clonerer
 		);
 	}
 	
-	public Clonerer withCloneableTypes(final Set<TypeToken<? extends Cloneable>> CLONEABLE)
+	public Clonerer withCloneableTypes(final Set<TypeToken2<? extends Cloneable>> CLONEABLE)
 	{
 		return
 		(
@@ -337,7 +337,7 @@ public class Clonerer
 		);
 	}
 	
-	public Clonerer withSerializableTypes(final Set<TypeToken<? extends Serializable>> SERIALIZABLE)
+	public Clonerer withSerializableTypes(final Set<TypeToken2<? extends Serializable>> SERIALIZABLE)
 	{
 		return
 		(
@@ -375,22 +375,22 @@ public class Clonerer
 	
 	public boolean registerImmutable(final Class<?> TYPE)
 	{
-		return IMMUTABLE.add(new TypeToken<Object>(TYPE));
+		return IMMUTABLE.add(new TypeToken2<Object>(TYPE));
 	}
 	
 	public <T> boolean registerTypeCloner(final Class<T> TYPE, final Cloning.ForType<T> TYPE_CLONER)
 	{
-		return TYPE_CLONERS.put(new TypeToken<T>(TYPE), TYPE_CLONER) == null;
+		return TYPE_CLONERS.put(new TypeToken2<T>(TYPE), TYPE_CLONER) == null;
 	}
 	
 	public boolean registerCloneable(final Class<? extends Cloneable> TYPE)
 	{
-		return CLONEABLE.add(new TypeToken<Cloneable>(TYPE));
+		return CLONEABLE.add(new TypeToken2<Cloneable>(TYPE));
 	}
 	
 	public boolean registerSerializable(final Class<? extends Serializable> TYPE)
 	{
-		return SERIALIZABLE.add(new TypeToken<Serializable>(TYPE));
+		return SERIALIZABLE.add(new TypeToken2<Serializable>(TYPE));
 	}
 	
 	public <T> T toClone(final T ORIGINAL)

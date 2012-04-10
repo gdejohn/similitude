@@ -11,7 +11,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-import static org.gdejohn.similitude.TypeLiteral.*;
+import static org.gdejohn.similitude.TypeToken.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
@@ -42,6 +42,26 @@ public class ClonerTest
 		try
 		{
 			//ROOT_LOGGER.setLevel(DEBUG);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public void testNonGenericClassTypeToken( )
+	{
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			String instance = "\"xyzzy\"";
+			Class<? extends String> expected = instance.getClass( );
+			TypeToken<? extends String> token = getTypeOf(instance);
+			Class<? extends String> actual = token.getRawType( );
+			
+			assertEquals(actual, expected);
 		}
 		finally
 		{
@@ -83,7 +103,7 @@ public class ClonerTest
 		}
 	}
 	
-	@Test
+	//@Test
 	public void testTypeLiteral( )
 	{
 		try
@@ -94,20 +114,20 @@ public class ClonerTest
 			
 			Constructor<?> cons = Test3.class.getDeclaredConstructor(Test1.class);
 			
-			TypeLiteral<?> test1 = getTypeOf(cons.getGenericParameterTypes( )[0]);
+			TypeLiteral<?> test1 = TypeLiteral.getTypeOf(cons.getGenericParameterTypes( )[0]);
 			
 			assertEquals(test1.getRawType( ), Test1.class);
 			assertEquals(Test1.class.getTypeParameters( ).length, 1);
 			assertEquals(test1.getTypeArgument(Test1.class.getTypeParameters( )[0]).getRawType( ), String.class);
-			assertEquals(getTypeOf(Test1.class.getMethod("foo").getGenericReturnType( ), test1).getRawType( ), String.class);
-			assertEquals(getTypeOf(Test1.class.getMethod("bar", Object.class).getGenericReturnType( ), "").getRawType( ), String.class);
+			assertEquals(TypeLiteral.getTypeOf(Test1.class.getMethod("foo").getGenericReturnType( ), test1).getRawType( ), String.class);
+			assertEquals(TypeLiteral.getTypeOf(Test1.class.getMethod("bar", Object.class).getGenericReturnType( ), "").getRawType( ), String.class);
 			
-			test1 = getTypeOf(Test1.class.getMethod("spam", Object.class).getGenericReturnType( ), "");
+			test1 = TypeLiteral.getTypeOf(Test1.class.getMethod("spam", Object.class).getGenericReturnType( ), "");
 			
 			assertEquals(test1.getRawType( ), Test1.class);
 			assertEquals(test1.getTypeArgument(Test1.class.getTypeParameters( )[0]).getRawType( ), String.class);
 			
-			test1 = getTypeOf(Test1.class.getMethod("ham", Test8.class).getGenericReturnType( ), new Test8<String>("xyzzy"));
+			test1 = TypeLiteral.getTypeOf(Test1.class.getMethod("ham", Test8.class).getGenericReturnType( ), new Test8<String>("xyzzy"));
 			
 			assertEquals(test1.getRawType( ), String.class);
 			
@@ -356,19 +376,25 @@ public class ClonerTest
 	@Test
 	public void testArrayContainingItself( )
 	{
-		Object[ ][ ] original = new Object[1][1];
+		Object[ ][ ] original = new Object[2][1];
 		
 		original[0][0] = original;
+		original[1] = original;
 		
 		Object[ ][ ] clone = new Cloner( ).toClone(original);
 		
 		assertNotSame(clone, original);
 		assertNotSame(clone[0], original[0]);
 		assertNotSame(clone[0][0], original[0][0]);
+		assertNotSame(clone[1], original[1]);
 		assertNotSame(clone[0][0], original);
+		assertNotSame(clone[1], original);
 		assertNotSame(clone, original[0][0]);
+		assertNotSame(clone, original[1]);
 		assertSame(original[0][0], original);
+		assertSame(original[1], original);
 		assertSame(clone[0][0], clone);
+		assertSame(clone[1], clone);
 	}
 	
 	static final class Immutable2
@@ -431,23 +457,23 @@ public class ClonerTest
 		public final int intField = 0;
 	}
 	
-	@Test
+	//@Test
 	public void testDetermineImmutable( )
 	{
 		try
 		{
 			ROOT_LOGGER.setLevel(DEBUG);
 			
-			TypeToken<?> type = new TypeToken<Object>(Test4.class, true);
+			TypeToken2<?> type = new TypeToken2<Object>(Test4.class, true);
 			
 			for (Class<?> primitive : Builder.WRAPPERS.keySet( ))
 			{
-				assertTrue(new TypeToken<Object>(primitive, true).isImmutable( ));
+				assertTrue(new TypeToken2<Object>(primitive, true).isImmutable( ));
 			}
 			
 			for (Class<?> immutable : type.IMMUTABLE)
 			{
-				assertTrue(new TypeToken<Object>(immutable, true).isImmutable( ));
+				assertTrue(new TypeToken2<Object>(immutable, true).isImmutable( ));
 			}
 			
 			assertFalse(type.IMMUTABLE.contains(Test4.class));
@@ -1120,7 +1146,7 @@ public class ClonerTest
 		<T> T foo(Test6<T> arg);
 	}
 	
-	@Test
+	//@Test
 	public void testResolveTypeVariable( )
 	{
 		try
@@ -1129,7 +1155,7 @@ public class ClonerTest
 			
 			Test6<String> arg = new Test6<String>("xyzzy");
 			
-			assertEquals(new TypeToken<Object>(Object.class).resolve((TypeVariable<?>)Test7.class.getMethods( )[0].getGenericReturnType( ), arg).getRawType( ), String.class);
+			assertEquals(new TypeToken2<Object>(Object.class).resolve((TypeVariable<?>)Test7.class.getMethods( )[0].getGenericReturnType( ), arg).getRawType( ), String.class);
 		}
 		finally
 		{
