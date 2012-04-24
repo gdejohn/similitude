@@ -45,7 +45,13 @@ public final class Builder
 					{
 						if (WRAPPER.isPrimitive( ))
 						{
-							throw new RuntimeException("WRAPPER must not be primitive.");
+							throw
+							(
+								new RuntimeException
+								(
+									"WRAPPER must not be primitive."
+								)
+							);
 						}
 						else if (put(typeOf(PRIMITIVE), typeOf(WRAPPER)) == null)
 						{ // No previous mapping.
@@ -53,7 +59,13 @@ public final class Builder
 						}
 						else
 						{ // If put() didn't return null, then a mapping already existed.
-							throw new RuntimeException("PRIMITIVE already mapped.");
+							throw
+							(
+								new RuntimeException
+								(
+									"PRIMITIVE already mapped."
+								)
+							);
 						}
 					}
 					else
