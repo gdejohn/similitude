@@ -27,13 +27,36 @@ public class TypeTokenTest
 	{
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			Class<String> expected = String.class;
 			
 			TypeToken<String> token = typeOf(expected);
 			
 			Class<String> actual = token.getRawType( );
+			
+			assertEquals(actual, expected);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public void testNonGenericTypeToString( )
+	{
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			Class<String> clazz = String.class;
+			
+			String expected = clazz.getSimpleName( );
+			
+			TypeToken<String> token = typeOf(clazz);
+			
+			String actual = token.toString( );
 			
 			assertEquals(actual, expected);
 		}
