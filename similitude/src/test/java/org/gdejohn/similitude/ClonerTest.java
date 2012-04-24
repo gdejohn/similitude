@@ -14,6 +14,7 @@ import static org.testng.Assert.fail;
 import static org.gdejohn.similitude.TypeToken.*;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
@@ -58,7 +59,7 @@ public class ClonerTest
 			
 			String instance = "\"xyzzy\"";
 			Class<? extends String> expected = instance.getClass( );
-			TypeToken<? extends String> token = getTypeOf(instance);
+			TypeToken<? extends String> token = typeOf(instance);
 			Class<? extends String> actual = token.getRawType( );
 			
 			assertEquals(actual, expected);
@@ -76,13 +77,84 @@ public class ClonerTest
 		<T> Test1<T> baz(List<T> arg);
 		<T> Test1<T> spam(T arg);
 		<T> T ham(Test8<T> arg);
+		<T> T lam(Test8<Test8<Test8<Test8<T>>>> arg);
 	}
 	
-	static class Test8<E>
+	interface Boogaloo<B>
+	{
+		B method( );
+	}
+	
+	static class Enclosing<E>
 	{
 		E field;
 		
-		Test8(E arg)
+		Enclosing(E arg)
+		{
+			field = arg;
+		}
+		
+		class Nested implements Boogaloo<E>
+		{
+			@Override
+			public E method( )
+			{
+				return Enclosing.this.field;
+			}
+			
+			class DoubleNested
+			{
+				E field = Enclosing.this.field;
+			}
+		}
+	}
+	
+	@Test
+	public void testEnclosingGeneric( )
+	{
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			String s = "xyzzy";
+			assertEquals(typeOf(new Enclosing<String>(s).new Nested( ).new DoubleNested( )).toString( ), "ClonerTest.Enclosing<String>.Nested.DoubleNested");
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public void testFindTypeArgument( )
+	{
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			Method method = Test1.class.getDeclaredMethod("lam", Test8.class);
+			
+			System.out.println(TypeToken.traceTypeVariable((TypeVariable<?>)method.getGenericReturnType( ), method.getGenericParameterTypes( )[0]));
+		}
+		catch (Exception e)
+		{
+			fail("", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	static class Test8<G>
+	{
+		G field;
+		
+		Test8(G arg)
 		{
 			field = arg;
 		}
@@ -103,6 +175,42 @@ public class ClonerTest
 		}
 	}
 	
+	static class Test9<E>
+	{
+		Test9(Test1<E> arg)
+		{
+			
+		}
+	}
+	
+	static Test9<String> foobar( )
+	{
+		return null;
+	}
+	
+	@Test
+	public void testTypeToken( )
+	{
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			Constructor<?> cons = Test9.class.getDeclaredConstructor(Test1.class);
+			
+			TypeToken<?> token = typeOf(cons.getGenericParameterTypes( )[0], typeOf(ClonerTest.class.getDeclaredMethod("foobar").getGenericReturnType( ), null));
+			
+			assertEquals(token.getTypeArgument(Test1.class.getTypeParameters( )[0]).getRawType( ), String.class);
+		}
+		catch (Exception e)
+		{
+			fail("", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
 	//@Test
 	public void testTypeLiteral( )
 	{
@@ -110,7 +218,7 @@ public class ClonerTest
 		{
 			ROOT_LOGGER.setLevel(DEBUG);
 			
-			assertEquals(getTypeOf((Type)String.class).getRawType( ), String.class);
+			assertEquals(typeOf((Type)String.class).getRawType( ), String.class);
 			
 			Constructor<?> cons = Test3.class.getDeclaredConstructor(Test1.class);
 			
@@ -165,6 +273,8 @@ public class ClonerTest
 	@Test
 	public void testByte( )
 	{
+		ROOT_LOGGER.setLevel(DEBUG);
+		
 		byte original = new Builder( ).instantiate(byte.class);
 		byte clone = new Cloner( ).toClone(original);
 		
@@ -399,7 +509,7 @@ public class ClonerTest
 	
 	static final class Immutable2
 	{
-		private final String field;
+		final String field;
 		
 		public Immutable2(String argument)
 		{
@@ -423,33 +533,44 @@ public class ClonerTest
 	@Test
 	public void testRegisteredImmutable( )
 	{
-		Cloner cloner = new Cloner( );
-		Builder builder = cloner.BUILDER;
-		
-		assertFalse(cloner.reset( ));
-		assertFalse(cloner.register(String.class));
-		assertTrue(cloner.register(Immutable2.class));
-		assertFalse(cloner.register(Immutable2.class));
-		assertTrue(cloner.reset( ));
-		assertFalse(cloner.reset( ));
-		assertTrue(cloner.register(Immutable2.class));
-		
-		Immutable2 original = new Immutable2("xyzzy");
-		Immutable2 clone = cloner.toClone(original);
-		
-		assertEquals(clone, original);
-		assertSame(clone, original);
-		
-		Immutable2 instance = builder.instantiate(Immutable2.class);
-		
-		assertNull(builder.addDefault(Immutable2.class, original));
-		
-		Immutable2 defaultValue = builder.instantiate(Immutable2.class);
-		
-		assertEquals(defaultValue, original);
-		assertSame(defaultValue, original);
-		assertNotEquals(defaultValue, instance);
-		assertNotSame(defaultValue, instance);
+		try
+		{
+			Cloner cloner = new Cloner( );
+			Builder builder = cloner.BUILDER;
+			
+			//ROOT_LOGGER.setLevel(DEBUG);
+			
+			assertFalse(cloner.reset( ));
+			assertFalse(cloner.register(typeOf(String.class)));
+			assertTrue(cloner.register(typeOf(Immutable2.class)));
+			assertFalse(cloner.register(typeOf(Immutable2.class)));
+			assertTrue(cloner.reset( ));
+			assertFalse(cloner.reset( ));
+			assertTrue(cloner.register(typeOf(Immutable2.class)));
+			
+			Immutable2 original = new Immutable2("xyzzy");
+			Immutable2 clone = cloner.toClone(original);
+			
+			assertEquals(clone, original);
+			assertSame(clone, original);
+			
+			Immutable2 instance = builder.instantiate(Immutable2.class);
+			
+			assertNull(builder.addDefault(typeOf(Immutable2.class), original));
+			
+			Immutable2 defaultValue = builder.instantiate(Immutable2.class);
+			
+			assertEquals(defaultValue, original);
+			assertSame(defaultValue, original);
+			assertNotEquals(defaultValue, instance, defaultValue.field + " " + instance.field);
+			assertNotSame(defaultValue, instance);
+		}
+		catch (Exception e)
+		{
+			ROOT_LOGGER.setLevel(WARN);
+			
+			fail("Failed.", e);
+		}
 	}
 	
 	static final class Test4
@@ -466,14 +587,14 @@ public class ClonerTest
 			
 			TypeToken2<?> type = new TypeToken2<Object>(Test4.class, true);
 			
-			for (Class<?> primitive : Builder.WRAPPERS.keySet( ))
+			for (TypeToken<?> primitive : Builder.WRAPPERS.keySet( ))
 			{
-				assertTrue(new TypeToken2<Object>(primitive, true).isImmutable( ));
+				assertTrue(new TypeToken2<Object>(primitive.getRawType( ), true).isImmutable( ));
 			}
 			
-			for (Class<?> immutable : type.IMMUTABLE)
+			for (TypeToken<?> immutable : type.IMMUTABLE)
 			{
-				assertTrue(new TypeToken2<Object>(immutable, true).isImmutable( ));
+				assertTrue(new TypeToken2<Object>(immutable.getRawType( ), true).isImmutable( ));
 			}
 			
 			assertFalse(type.IMMUTABLE.contains(Test4.class));
@@ -601,7 +722,7 @@ public class ClonerTest
 	{
 		Cloner cloner = new Cloner( );
 		Subclass original = new Subclass("xyzzy");
-		cloner.register(Superclass2.class, original);
+		cloner.register(typeOf(Superclass2.class), original);
 		Superclass2 clone = cloner.toClone(original);
 		
 		assertNotSame(clone, original);
@@ -827,7 +948,7 @@ public class ClonerTest
 		
 		List<?> list = builder.instantiate(List.class);
 		
-		assertEquals(list.add(null), (boolean)builder.getDefault(Boolean.class));
+		assertEquals(list.add(null), (boolean)builder.getDefault(typeOf(Boolean.class)));
 	}
 	
 	@Test
@@ -921,8 +1042,12 @@ public class ClonerTest
 	{
 		try
 		{
+			Cloner cloner = new Cloner( );
+			
+			ROOT_LOGGER.setLevel(DEBUG);
+			
 			InterfaceParam original = new InterfaceParam(new Impl( ));
-			InterfaceParam clone = new Cloner( ).toClone(original);
+			InterfaceParam clone = cloner.toClone(original);
 			
 			assertNotSame(clone, original);
 			assertEquals(clone, original);
@@ -1068,10 +1193,12 @@ public class ClonerTest
 	@Test
 	public void testLocalClass( )
 	{
-		//ROOT_LOGGER.setLevel(DEBUG);
+		Cloner cloner = new Cloner( );
+		
+		ROOT_LOGGER.setLevel(DEBUG);
 		
 		Object original = local("xyzzy");
-		Object clone = new Cloner( ).toClone(original);
+		Object clone = cloner.toClone(original);
 		
 		assertNotSame(clone, original);
 		assertEquals(clone, original);

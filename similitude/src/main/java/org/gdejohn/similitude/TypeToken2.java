@@ -37,7 +37,7 @@ public class TypeToken2<T> implements Type
 	/**
 	 * Known immutable types.
 	 */
-	final Set<Class<?>> IMMUTABLE;
+	final Set<TypeToken<?>> IMMUTABLE;
 	
 	private final String TO_STRING;
 	
@@ -47,7 +47,7 @@ public class TypeToken2<T> implements Type
 	
 	private final boolean DETERMINE_IMMUTABLE;
 
-	public TypeToken2(final Type TYPE, final TypeToken2<?> PARENT, final Set<Class<?>> IMMUTABLE, final boolean DETERMINE_IMMUTABLE, final Object... ARGUMENTS)
+	public TypeToken2(final Type TYPE, final TypeToken2<?> PARENT, final Set<TypeToken<?>> IMMUTABLE, final boolean DETERMINE_IMMUTABLE, final Object... ARGUMENTS)
 	{
 		this.PARENT = PARENT;
 		
@@ -719,7 +719,7 @@ public class TypeToken2<T> implements Type
 			
 			if (isImmutable(CLASS))
 			{
-				IMMUTABLE.add(CLASS.getRawType( ));
+				//IMMUTABLE.add(CLASS.getRawType( ));
 			}
 			
 			return true;
@@ -740,7 +740,7 @@ public class TypeToken2<T> implements Type
 	{
 		return null;
 	}
-	
+	/*
 	@SuppressWarnings("unchecked")
 	static <E> E doSnuts(Class<? super E> clazz)
 	{
@@ -755,5 +755,78 @@ public class TypeToken2<T> implements Type
 	{
 		java.util.List<String> list = TypeToken2.<java.util.List<String>>doSnuts(java.util.List.class);
 		System.out.println(list.get(-1));
+	}*/
+
+	/**
+	 * Maps type variables to supplied type arguments.
+	 * 
+	 * @param GENERIC_TYPE The generic type with its type arguments.
+	 * @param OLD Other type arguments in scope.
+	 * 
+	 * @return Type variables mapped to their arguments, or the empty map if no type variables are declared.
+	 */
+	public Map<TypeVariable<?>, Type> getTypeArguments(final Type TYPE, final Map<TypeVariable<?>, Type> OLD, final Object... ARGS)
+	{
+		if (TYPE instanceof ParameterizedType)
+		{
+			final Map<TypeVariable<?>, Type> TYPE_ARGUMENTS =
+			(
+				new LinkedHashMap<TypeVariable<?>, Type>( )
+			);
+			
+			Type current = TYPE;
+			
+			do
+			{
+				LOGGER.debug("Current type: {}", current);
+				
+				final TypeVariable<?>[ ] PARAMETERS =
+				(
+					((Class<?>)((ParameterizedType)current).getRawType( )).getTypeParameters( )
+				);
+				
+				final Type[ ] ARGUMENTS =
+				(
+					((ParameterizedType)current).getActualTypeArguments( )
+				);
+				
+				for (int index = 0; index < PARAMETERS.length; index++)
+				{
+					if (ARGUMENTS[index] instanceof Class)
+					{
+						LOGGER.debug("{} parameterized by class type: {}", PARAMETERS[index], ARGUMENTS[index]);
+						
+						TYPE_ARGUMENTS.put
+						(
+							PARAMETERS[index],
+							(Class<?>)ARGUMENTS[index]
+						);
+					}
+					else if (ARGUMENTS[index] instanceof TypeVariable)
+					{
+						LOGGER.debug("{} parameterized by type argument: {}", PARAMETERS[index], OLD.get(ARGUMENTS[index]));
+						
+						TYPE_ARGUMENTS.put
+						(
+							PARAMETERS[index],
+							OLD.get(ARGUMENTS[index])
+						);
+					}
+					else
+					{
+						// Need to look through constructor args. GenericArrayType? If WildcardType, use bounds?
+					}
+				}
+				
+				current = ((ParameterizedType)current).getOwnerType( );
+			}
+			while (current instanceof ParameterizedType);
+			
+			return Collections.unmodifiableMap(TYPE_ARGUMENTS);
+		}
+		else
+		{
+			return Collections.emptyMap( );
+		}
 	}
 }

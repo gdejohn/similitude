@@ -1,16 +1,23 @@
 package org.gdejohn.similitude;
 
+import static java.lang.Boolean.valueOf;
+import static java.lang.Byte.valueOf;
+import static java.lang.Character.valueOf;
+import static java.lang.Double.valueOf;
+import static java.lang.Float.valueOf;
+import static java.lang.Integer.valueOf;
+import static java.lang.Long.valueOf;
+import static java.lang.Math.nextUp;
+import static java.lang.Short.valueOf;
 import static java.lang.reflect.Array.get;
 import static java.lang.reflect.Array.getLength;
+import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Array.set;
-import static org.gdejohn.similitude.TypeToken.getTypeOf;
+import static java.util.Collections.unmodifiableMap;
+import static org.gdejohn.similitude.TypeToken.typeOf;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -37,35 +44,38 @@ public final class Cloner
 	 * and {@code String} is mapped to the empty string. Primitives types
 	 * aren't included here because they're autoboxed during cloning.
 	 */
-	static final Map<Class<?>, Object> BASIC_TYPES;
-	
-	static
-	{
-		/*
-		 * This map shouldn't change at runtime, so set the initial capacity to
-		 * the maximum number of entries that will be added (eight wrappers and
-		 * String makes nine) and the load factor to just above one. No wasted
-		 * space, no rehashing.
-		 */
-		BASIC_TYPES =
+	@SuppressWarnings("serial")
+	public static final Map<TypeToken<?>, Object> BASIC_TYPES =
+	(
+		unmodifiableMap
 		(
-			new LinkedHashMap<Class<?>, Object>(9, Math.nextUp(1.0f))
-		);
-		
-		BASIC_TYPES.put(Byte.class, Byte.valueOf((byte)0));
-		BASIC_TYPES.put(Short.class, Short.valueOf((short)0));
-		BASIC_TYPES.put(Integer.class, Integer.valueOf(0));
-		BASIC_TYPES.put(Long.class, Long.valueOf(0L));
-		BASIC_TYPES.put(Float.class, Float.valueOf(0.0f));
-		BASIC_TYPES.put(Double.class, Double.valueOf(0.0d));
-		BASIC_TYPES.put(Character.class, Character.valueOf('\u0000'));
-		BASIC_TYPES.put(Boolean.class, Boolean.valueOf(false));
-		
-		BASIC_TYPES.put(String.class, "");
-		
-		// http://stackoverflow.com/questions/5124012/examples-of-immutable-classes
-	}
+			new LinkedHashMap<TypeToken<?>, Object>(9, nextUp(1.0f))
+			{
+				<T> void map(final Class<T> CLASS, final T VALUE)
+				{
+					put(typeOf(CLASS), VALUE);
+				}
+				
+				/*
+				 * Instance initializer.
+				 */
+				{
+					map(Byte.class, valueOf((byte)0));
+					map(Short.class, valueOf((short)0));
+					map(Integer.class, valueOf(0));
+					map(Long.class, valueOf(0L));
+					map(Float.class, valueOf(0.0f));
+					map(Double.class, valueOf(0.0d));
+					map(Character.class, valueOf('\u0000'));
+					map(Boolean.class, valueOf(false));
+					
+					map(String.class, "");
+				}
+			}
+		)
+	);
 	
+	@SuppressWarnings("unused")
 	private final boolean DETERMINE_IMMUTABLE;
 	
 	/**
@@ -76,7 +86,7 @@ public final class Cloner
 	/**
 	 * Immutable types, can be shallow-copied.
 	 */
-	final Set<Class<?>> IMMUTABLE;
+	private final Set<TypeToken<?>> IMMUTABLE;
 	
 	/**
 	 * Initializes all instance variables.
@@ -84,9 +94,9 @@ public final class Cloner
 	 * @param KNOWN_IMMUTABLE_TYPES Types known to be immutable, which can therefore be safely shallow-copied.
 	 * @param DETERMINE_IMMUTABLE Whether the resulting instance should attempt to reflectively determine immutability during cloning.
 	 */
-	private Cloner(final Set<Class<?>> KNOWN_IMMUTABLE_TYPES, final boolean DETERMINE_IMMUTABLE)
+	private Cloner(final Set<TypeToken<?>> KNOWN_IMMUTABLE_TYPES, final boolean DETERMINE_IMMUTABLE)
 	{
-		IMMUTABLE = new LinkedHashSet<Class<?>>(KNOWN_IMMUTABLE_TYPES);
+		IMMUTABLE = new LinkedHashSet<TypeToken<?>>(KNOWN_IMMUTABLE_TYPES);
 		
 		this.DETERMINE_IMMUTABLE = DETERMINE_IMMUTABLE;
 	}
@@ -119,18 +129,18 @@ public final class Cloner
 	/**
 	 * Registers the given class as immutable, for shallow copying.
 	 * 
-	 * @param CLASS The class to register as immutable.
+	 * @param TYPE The type to register as immutable.
 	 * 
 	 * @return {@code true} if {@code CLASS} wasn't already registered.
 	 */
-	public boolean register(final Class<?> CLASS)
+	public boolean register(final TypeToken<?> TYPE)
 	{
-		final boolean CHANGED = IMMUTABLE.add(CLASS);
+		final boolean CHANGED = IMMUTABLE.add(TYPE);
 		
 		LOGGER.debug
 		(
 			"Registering class {} as immutable: {}",
-			CLASS.getSimpleName( ),
+			TYPE.getRawType( ).getSimpleName( ),
 			CHANGED ? "changed" : "unchanged"
 		);
 		
@@ -145,33 +155,35 @@ public final class Cloner
 	 * The class must be immutable, or any resulting clone that relies on the
 	 * class isn't guaranteed to be a true deep copy.
 	 * 
-	 * @param CLASS The class to register as immutable.
+	 * @param TYPE The type to register as immutable.
 	 * @param VALUE The value to map {@code CLASS} to.
 	 * 
 	 * @return {@code true} if {@code CLASS} wasn't already registered.
 	 * 
 	 * @throws IllegalArgumentException If {@code CLASS} is an array type.
 	 */
-	public <T, U extends T> boolean register(final Class<T> CLASS, final U VALUE)
+	public <T, U extends T> boolean register(final TypeToken<T> TYPE, final U VALUE)
 	{
-		if (CLASS.isArray( ))
+		if (TYPE.getRawType( ).isArray( ))
 		{
 			throw new IllegalArgumentException("Arrays aren't immutable.");
 		}
 		else
 		{
-			BUILDER.addDefault(CLASS, VALUE);
+			BUILDER.addDefault(TYPE, VALUE);
 			
-			return register(CLASS);
+			return register(TYPE);
 		}
 	}
 	
 	/**
-	 * Resets {@link #IMMUTABLE} to default values.
+	 * Resets immutable types to default values.
 	 * 
-	 * After this method returns, {@code IMMUTABLE} will contain the primitive
-	 * wrappers and {@code String}. Any other values that were previously added
-	 * by the user are removed.
+	 * After this method returns, any previous user-registered immutable types
+	 * will have been removed, leaving {@code String} and the primitive
+	 * wrappers.
+	 * 
+	 * @return {@code true} if the immutable types changed.
 	 */
 	public boolean reset( )
 	{
@@ -198,7 +210,10 @@ public final class Cloner
 	 * and {@link java.lang.Object#hashCode()} are ignored. Rather, identity is
 	 * used.
 	 */
-	private Map<Object, Object> CLONES = new IdentityHashMap<Object, Object>( );
+	private IdentityHashMap<Object, Object> CLONES =
+	(
+		new IdentityHashMap<Object, Object>( )
+	);
 	
 	/**
 	 * Does all of the work for {@link #toClone(Object)}.
@@ -231,11 +246,11 @@ public final class Cloner
 		}
 		else
 		{
-			final TypeToken<? extends T> TYPE = getTypeOf(ORIGINAL); // new TypeToken2<Object>(CLASS, DETERMINE_IMMUTABLE);
+			final TypeToken<? extends T> TYPE = typeOf(ORIGINAL); // new TypeToken2<Object>(CLASS, DETERMINE_IMMUTABLE);
 			
 			final Class<? extends T> CLASS = TYPE.getRawType( );
 			
-			if (CLASS.isEnum( ) || IMMUTABLE.contains(CLASS))
+			if (CLASS.isEnum( ) || IMMUTABLE.contains(TYPE))
 			{ // Base case, safe to shallow-copy.
 				CLONE = ORIGINAL;
 				
@@ -274,7 +289,13 @@ public final class Cloner
 				}
 				else
 				{
-					CLONE = BUILDER.instantiateArray(CLASS, LENGTH);
+					CLONE =
+					(
+						CLASS.cast
+						(
+							newInstance(CLASS.getComponentType( ), LENGTH)
+						)
+					);
 					
 					LOGGER.debug("Successfully instantiated array.");
 				}
@@ -334,7 +355,7 @@ public final class Cloner
 				{
 					try
 					{
-						CLONE = BUILDER.instantiate(CLASS);
+						CLONE = BUILDER.instantiate(TYPE);
 						
 						LOGGER.debug
 						(
@@ -445,27 +466,5 @@ public final class Cloner
 		}
 		
 		return CLONE;
-	}
-	
-	static class Foo<E>
-	{
-		class Bar<F extends E>
-		{
-			
-		}
-	}
-	
-	static abstract class Baz
-	{
-		abstract Foo<Number>.Bar<Integer> doStuff( );
-	}
-	
-	@SuppressWarnings("unused")
-	public static void main(String[ ] args) throws Exception
-	{
-		String o = "xyzzy";
-		CharSequence c = new Cloner( ).toClone((CharSequence)o);
-		System.out.println(java.util.Arrays.toString(new Builder( ).getTypeArguments(Baz.class.getDeclaredMethod("doStuff").getGenericReturnType( ), Collections.<TypeVariable<?>, Type>emptyMap( )).entrySet( ).toArray( )));
-		System.out.println(((ParameterizedType)new Object( ){void foo(java.util.List<String> l){ }}.getClass( ).getDeclaredMethod("foo", java.util.List.class).getGenericParameterTypes( )[0]).getRawType( ));
 	}
 }
