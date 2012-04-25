@@ -18,16 +18,47 @@ public class TypeToken<T>
 		this.RAW_TYPE = RAW_TYPE;
 	}
 	
-	public static <T> TypeToken<T> typeOf(final Class<T> RAW_TYPE)
+	public static <T> TypeToken<T> typeOf(final Class<T> CLASS)
 	{
-		LOGGER.debug("Getting type of class: {}", RAW_TYPE.getSimpleName( ));
+		LOGGER.debug("Getting type of class: {}", CLASS.getSimpleName( ));
 		
-		return new TypeToken<T>(RAW_TYPE);
+		return new TypeToken<T>(CLASS);
+	}
+	
+	public static <T> TypeToken<? extends T> typeOf(final T OBJECT)
+	{
+		LOGGER.debug("Getting type of object: {}", OBJECT);
+		
+		@SuppressWarnings("unchecked")
+		final Class<? extends T> RAW_TYPE =
+		(
+			(Class<? extends T>)OBJECT.getClass( )
+		);
+		
+		return typeOf(RAW_TYPE);
 	}
 	
 	public Class<T> getRawType( )
 	{
 		return RAW_TYPE;
+	}
+	
+	@Override
+	public boolean equals(final Object THAT)
+	{
+		if (THAT instanceof TypeToken)
+		{
+			final TypeToken<?> THAT_TYPE_TOKEN = (TypeToken<?>)THAT;
+
+			return
+			(
+				RAW_TYPE.equals(THAT_TYPE_TOKEN.getRawType( ))
+			);
+		}
+		else
+		{
+			return false;
+		}
 	}
 	
 	@Override
