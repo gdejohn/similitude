@@ -972,7 +972,7 @@ public class TypeToken1<E>
 			
 			toString = STRING_BUILDER.toString( );
 			
-			if (toString == null || toString.isEmpty( ))
+			if (toString == null) // || toString.isEmpty( ))
 			{
 				throw new RuntimeException( );
 			}

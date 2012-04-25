@@ -1,5 +1,6 @@
 package org.gdejohn.similitude;
 
+import static java.lang.Integer.valueOf;
 import static ch.qos.logback.classic.Level.*;
 import static org.gdejohn.similitude.TypeToken.*;
 import static org.testng.Assert.*;
@@ -71,7 +72,7 @@ public class TypeTokenTest
 	{
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			String string = "xyzzy";
 			
@@ -82,6 +83,37 @@ public class TypeTokenTest
 			Class<? extends String> actual = token.getRawType( );
 			
 			assertEquals(actual, expected);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public void testNonGenericEquality( )
+	{
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<? extends String> foo = typeOf("foo");
+			
+			TypeToken<? extends String> bar = typeOf("bar");
+			
+			TypeToken<? extends Integer> baz = typeOf(valueOf(0));
+			
+			assertTrue(foo.equals(foo));
+			assertTrue(bar.equals(bar));
+			assertTrue(baz.equals(baz));
+			
+			assertTrue(foo.equals(bar));
+			assertTrue(bar.equals(foo));
+			
+			assertFalse(foo.equals(baz));
+			assertFalse(baz.equals(foo));
+			assertFalse(bar.equals(baz));
+			assertFalse(baz.equals(bar));
 		}
 		finally
 		{

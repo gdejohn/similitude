@@ -1,5 +1,6 @@
 package org.gdejohn.similitude;
 
+import static java.lang.Integer.valueOf;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import org.slf4j.Logger;
@@ -10,6 +11,10 @@ public class TypeToken<T>
 	private static final Logger LOGGER = getLogger(TypeToken.class);
 	
 	private final Class<T> RAW_TYPE;
+	
+	private Integer hashCode = null;
+	
+	private String toString = null;
 	
 	private TypeToken(final Class<T> RAW_TYPE)
 	{
@@ -44,12 +49,28 @@ public class TypeToken<T>
 	}
 	
 	@Override
+	public int hashCode( )
+	{
+		if (hashCode == null)
+		{ // First time this method has been invoked on this instance.
+			hashCode = valueOf(RAW_TYPE.hashCode( ));
+			
+			if (hashCode == null)
+			{
+				throw new RuntimeException( );
+			}
+		}
+		
+		return hashCode.intValue( );
+	}
+	
+	@Override
 	public boolean equals(final Object THAT)
 	{
 		if (THAT instanceof TypeToken)
 		{
 			final TypeToken<?> THAT_TYPE_TOKEN = (TypeToken<?>)THAT;
-
+			
 			return
 			(
 				RAW_TYPE.equals(THAT_TYPE_TOKEN.getRawType( ))
@@ -64,6 +85,16 @@ public class TypeToken<T>
 	@Override
 	public String toString( )
 	{
-		return RAW_TYPE.getSimpleName( );
+		if (toString == null)
+		{
+			toString = RAW_TYPE.getSimpleName( );
+			
+			if (toString == null)
+			{
+				throw new RuntimeException( );
+			}
+		}
+		
+		return toString;
 	}
 }
