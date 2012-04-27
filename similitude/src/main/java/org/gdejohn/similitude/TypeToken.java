@@ -1,13 +1,27 @@
 package org.gdejohn.similitude;
 
 import static java.lang.Integer.valueOf;
+import static java.lang.Math.nextUp;
 import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Arrays.deepHashCode;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableSet;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 
@@ -16,7 +30,14 @@ public class TypeToken<T>
 {
 	private static final Logger LOGGER = getLogger(TypeToken.class);
 	
+	private static final Map<TypeVariable<?>, TypeToken<?>> NO_TYPE_ARGUMENTS =
+	(
+		emptyMap( )
+	);
+	
 	private final Class<T> RAW_TYPE;
+	
+	private final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS;
 	
 	private Set<Field> instanceFields = null;
 	
@@ -24,18 +45,146 @@ public class TypeToken<T>
 	
 	private String toString = null;
 	
-	private TypeToken(final Class<T> RAW_TYPE)
+	private TypeToken(final Class<T> RAW_TYPE, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS)
 	{
-		LOGGER.debug("Constructing type token.\nRaw type: {}", RAW_TYPE);
-		
 		this.RAW_TYPE = RAW_TYPE;
+		this.TYPE_ARGUMENTS = TYPE_ARGUMENTS;
+	}
+	
+	public static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS)
+	{
+		LOGGER.debug
+		(
+			"Getting type of class \"{}\" with type arguments \"{}\"",
+			CLASS.getSimpleName( ),
+			TYPE_ARGUMENTS
+		);
+		
+		return new TypeToken<T>(CLASS, TYPE_ARGUMENTS);
 	}
 	
 	public static <T> TypeToken<T> typeOf(final Class<T> CLASS)
 	{
 		LOGGER.debug("Getting type of class: {}", CLASS.getSimpleName( ));
 		
-		return new TypeToken<T>(CLASS);
+		return typeOf(CLASS, NO_TYPE_ARGUMENTS);
+	}
+	
+	private static LinkedList<TypeVariable<?>> traceTypeVariable(final TypeVariable<?> TYPE_VARIABLE, final Type TYPE)
+	{
+		if (TYPE instanceof TypeVariable)
+		{
+			if (TYPE_VARIABLE.equals(TYPE))
+			{
+				return new LinkedList<TypeVariable<?>>( );
+			}
+			else
+			{ // Check upper bounds.
+				throw new UnsupportedOperationException( );
+			}
+		}
+		else if (TYPE instanceof WildcardType)
+		{ // Check upper bounds.
+			throw new UnsupportedOperationException( );
+		}
+		else if (TYPE instanceof GenericArrayType)
+		{ // Check component type.
+			throw new UnsupportedOperationException( );
+		}
+		else if (TYPE instanceof ParameterizedType)
+		{
+			final ParameterizedType PARAMETERIZED_TYPE =
+			(
+				(ParameterizedType)TYPE
+			);
+			
+			final Type RAW_TYPE = PARAMETERIZED_TYPE.getRawType( );
+			
+			final TypeVariable<?>[ ] TYPE_PARAMETERS;
+			
+			if (RAW_TYPE instanceof Class)
+			{
+				TYPE_PARAMETERS = ((Class<?>)RAW_TYPE).getTypeParameters( );
+			}
+			else
+			{
+				throw new RuntimeException( );
+			}
+			
+			final Type[ ] TYPE_ARGUMENTS =
+			(
+				PARAMETERIZED_TYPE.getActualTypeArguments( )
+			);
+			
+			for (int index = 0; index < TYPE_PARAMETERS.length; index++)
+			{
+				try
+				{
+					final LinkedList<TypeVariable<?>> REST =
+					(
+						traceTypeVariable
+						(
+							TYPE_VARIABLE, TYPE_ARGUMENTS[index]
+						)
+					);
+					
+					REST.addFirst(TYPE_PARAMETERS[index]);
+					
+					return REST;
+				}
+				catch (final RuntimeException e)
+				{
+					continue;
+				}
+			}
+			
+			throw new RuntimeException("Type variable not found.");
+		}
+		else
+		{
+			throw new RuntimeException("Subtype of type not recognized.");
+		}
+	}
+	
+	public static TypeToken<?> typeOf(final TypeVariable<?> TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	{
+		try
+		{
+			return PARENT.getTypeArgument(TYPE);
+		}
+		catch (final Exception e)
+		{
+			LOGGER.debug("Type argument not found in parent.");
+		}
+		
+		for (final Entry<Type, Object> ENTRY : PARAMETERIZATIONS.entrySet( ))
+		{
+			try
+			{
+				final List<TypeVariable<?>> TYPE_VARIABLES =
+				(
+					traceTypeVariable(TYPE, ENTRY.getKey( ))
+				);
+				
+				TypeToken<?> typeArgument = typeOf(ENTRY.getValue( ));
+				
+				for (final TypeVariable<?> TYPE_VARIABLE : TYPE_VARIABLES)
+				{
+					typeArgument =
+					(
+						typeArgument.getTypeArgument(TYPE_VARIABLE)
+					);
+				}
+				
+				return typeArgument;
+			}
+			catch (final RuntimeException e)
+			{
+				continue;
+			}
+		}
+		
+		throw new RuntimeException("Type argument couldn't be determined.");
 	}
 	
 	public static <T> TypeToken<? extends T> typeOf(final T OBJECT)
@@ -48,12 +197,99 @@ public class TypeToken<T>
 			(Class<? extends T>)OBJECT.getClass( )
 		);
 		
-		return typeOf(RAW_TYPE);
+		final TypeVariable<?>[ ] TYPE_PARAMETERS =
+		(
+			RAW_TYPE.getTypeParameters( )
+		);
+		
+		final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS;
+		
+		final Set<Field> INSTANCE_FIELDS = getAllInstanceFields(RAW_TYPE);
+		
+		if (TYPE_PARAMETERS.length == 0)
+		{
+			LOGGER.debug("Non-generic type.");
+			
+			TYPE_ARGUMENTS = NO_TYPE_ARGUMENTS;
+		}
+		else
+		{
+			final Map<Type, Object> PARAMETERIZATIONS =
+			(
+				new LinkedHashMap<Type, Object>
+				(
+					INSTANCE_FIELDS.size( ), nextUp(1.0f)
+				)
+			);
+			
+			for (final Field FIELD : INSTANCE_FIELDS)
+			{
+				try
+				{
+					FIELD.setAccessible(true);
+					
+					final Object VALUE = FIELD.get(OBJECT);
+					
+					if (VALUE != null)
+					{
+						PARAMETERIZATIONS.put(FIELD.getGenericType( ), VALUE);
+					}
+				}
+				catch (final SecurityException e)
+				{
+					continue;
+				}
+				catch (final IllegalAccessException e)
+				{ // SecurityException should always be thrown before this.
+					throw new RuntimeException(e);
+				}
+			}
+			
+			TYPE_ARGUMENTS =
+			(
+				new LinkedHashMap<TypeVariable<?>, TypeToken<?>>
+				(
+					TYPE_PARAMETERS.length, nextUp(1.0f)
+				)
+			);
+			
+			for (final TypeVariable<?> TYPE_VARIABLE : TYPE_PARAMETERS)
+			{
+				TYPE_ARGUMENTS.put
+				(
+					TYPE_VARIABLE,
+					typeOf(TYPE_VARIABLE, null, PARAMETERIZATIONS)
+				);
+			}
+		}
+		
+		final TypeToken<? extends T> TYPE = typeOf(RAW_TYPE, TYPE_ARGUMENTS);
+		
+		TYPE.instanceFields = INSTANCE_FIELDS;
+		
+		return TYPE;
 	}
 	
 	public Class<T> getRawType( )
 	{
 		return RAW_TYPE;
+	}
+	
+	public Map<TypeVariable<?>, TypeToken<?>> getAllTypeArguments( )
+	{
+		return TYPE_ARGUMENTS;
+	}
+	
+	public TypeToken<?> getTypeArgument(final TypeVariable<?> TYPE_VARIABLE)
+	{
+		if (TYPE_ARGUMENTS.containsKey(TYPE_VARIABLE))
+		{
+			return TYPE_ARGUMENTS.get(TYPE_VARIABLE);
+		}
+		else
+		{
+			throw new RuntimeException("Type variable not found.");
+		}
 	}
 	
 	private static Set<Field> getAllInstanceFields(Class<?> type)
@@ -105,7 +341,19 @@ public class TypeToken<T>
 	{
 		if (hashCode == null)
 		{ // First time this method has been invoked on this instance.
-			hashCode = valueOf(RAW_TYPE.hashCode( ));
+			hashCode =
+			(
+				valueOf
+				(
+					deepHashCode
+					(
+						new Object[ ]
+						{
+							RAW_TYPE, TYPE_ARGUMENTS
+						}
+					)
+				)
+			);
 			
 			if (hashCode == null)
 			{
@@ -125,7 +373,8 @@ public class TypeToken<T>
 			
 			return
 			(
-				RAW_TYPE.equals(THAT_TYPE_TOKEN.getRawType( ))
+				RAW_TYPE.equals(THAT_TYPE_TOKEN.getRawType( )) &&
+				TYPE_ARGUMENTS.equals(THAT_TYPE_TOKEN.getAllTypeArguments( ))
 			);
 		}
 		else
@@ -138,8 +387,48 @@ public class TypeToken<T>
 	public String toString( )
 	{
 		if (toString == null)
-		{
-			toString = RAW_TYPE.getSimpleName( );
+		{ // First time this method has been invoked on this instance.
+			final StringBuilder STRING_BUILDER =
+			(
+				new StringBuilder(RAW_TYPE.getSimpleName( ))
+			);
+			
+			if (TYPE_ARGUMENTS.isEmpty( ) == false)
+			{ // Parameterized type.
+				STRING_BUILDER.append('<');
+				
+				final Iterator<TypeToken<?>> ARGUMENTS =
+				(
+					TYPE_ARGUMENTS.values( ).iterator( )
+				);
+				
+				while (true)
+				{
+					final TypeToken<?> ARGUMENT = ARGUMENTS.next( );
+					
+					if (ARGUMENT == null)
+					{
+						STRING_BUILDER.append('?');
+					}
+					else
+					{
+						STRING_BUILDER.append(ARGUMENT);
+					}
+					
+					if (ARGUMENTS.hasNext( ))
+					{ // Only append separator if there are more parameters.
+						STRING_BUILDER.append(",");
+					}
+					else
+					{
+						break;
+					}
+				}
+				
+				STRING_BUILDER.append('>');
+			}
+			
+			toString = STRING_BUILDER.toString( );
 			
 			if (toString == null)
 			{

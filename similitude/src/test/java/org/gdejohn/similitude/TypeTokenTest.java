@@ -1,10 +1,13 @@
 package org.gdejohn.similitude;
 
+import static ch.qos.logback.classic.Level.DEBUG;
+import static ch.qos.logback.classic.Level.WARN;
 import static java.lang.Integer.valueOf;
 import static java.util.Arrays.asList;
-import static ch.qos.logback.classic.Level.*;
-import static org.gdejohn.similitude.TypeToken.*;
-import static org.testng.Assert.*;
+import static org.gdejohn.similitude.TypeToken.typeOf;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.fail;
 
 import java.lang.reflect.Field;
 import java.util.LinkedHashSet;
@@ -143,7 +146,7 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			Field parentField = Parent.class.getDeclaredField("parentField");
 			
@@ -156,6 +159,66 @@ public class TypeTokenTest
 			Set<Field> actual = token.getAllInstanceFields( );
 			
 			assertEquals(actual, expected);
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void instanceOfTopLevelGenericType( )
+	{
+		class First<F>
+		{
+			@SuppressWarnings("unused")
+			private F field;
+			
+			First(F arg)
+			{
+				field = arg;
+			}
+		}
+		
+		class Second<S>
+		{
+			@SuppressWarnings("unused")
+			private S field;
+			
+			Second(S arg)
+			{
+				field = arg;
+			}
+		}
+		
+		class Third<T>
+		{
+			@SuppressWarnings("unused")
+			private T field;
+			
+			Third(T arg)
+			{
+				field = arg;
+			}
+		}
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			Third<String> third = new Third<String>("xyzzy");
+			
+			Second<Third<String>> second = new Second<Third<String>>(third);
+			
+			First<Second<Third<String>>> first = new First<Second<Third<String>>>(second);
+			
+			TypeToken<? extends First<Second<Third<String>>>> token = typeOf(first);
+			
+			assertEquals(token.toString( ), "First<Second<Third<String>>>");
 		}
 		catch (Exception e)
 		{
