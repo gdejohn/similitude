@@ -1,7 +1,13 @@
 package org.gdejohn.similitude;
 
 import static java.lang.Integer.valueOf;
+import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Collections.unmodifiableSet;
 import static org.slf4j.LoggerFactory.getLogger;
+
+import java.lang.reflect.Field;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.slf4j.Logger;
 
@@ -11,6 +17,8 @@ public class TypeToken<T>
 	private static final Logger LOGGER = getLogger(TypeToken.class);
 	
 	private final Class<T> RAW_TYPE;
+	
+	private Set<Field> instanceFields = null;
 	
 	private Integer hashCode = null;
 	
@@ -46,6 +54,50 @@ public class TypeToken<T>
 	public Class<T> getRawType( )
 	{
 		return RAW_TYPE;
+	}
+	
+	private static Set<Field> getAllInstanceFields(Class<?> type)
+	{
+		final Set<Field> INSTANCE_FIELDS = new LinkedHashSet<Field>( );
+		
+		while (type != null)
+		{
+			for (final Field FIELD : type.getDeclaredFields( ))
+			{
+				if (isStatic(FIELD.getModifiers( )))
+				{ // If static, ignore and skip to the next one.
+					continue;
+				}
+				else
+				{
+					LOGGER.debug("Found instance field: {}", FIELD);
+					
+					if (INSTANCE_FIELDS.add(FIELD) == false)
+					{
+						throw new RuntimeException("Field already added.");
+					}
+				}
+			}
+			
+			type = type.getSuperclass( );
+		}
+		
+		return unmodifiableSet(INSTANCE_FIELDS);
+	}
+	
+	public Set<Field> getAllInstanceFields( )
+	{
+		if (instanceFields == null)
+		{ // First time this method has been invoked on this instance.
+			instanceFields = getAllInstanceFields(RAW_TYPE);
+			
+			if (instanceFields == null)
+			{
+				throw new RuntimeException( );
+			}
+		}
+		
+		return instanceFields;
 	}
 	
 	@Override

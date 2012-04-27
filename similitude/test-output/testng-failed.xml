@@ -5,7 +5,7 @@
     <classes>
       <class name="org.gdejohn.similitude.TypeTokenTest">
         <methods>
-          <include name="testNonGenericType"/>
+          <include name="instanceOfTopLevelGenericType"/>
         </methods>
       </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
     </classes>

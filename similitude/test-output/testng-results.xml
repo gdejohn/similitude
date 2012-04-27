@@ -1,20 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results skipped="0" failed="0" total="4" passed="4">
+<testng-results skipped="0" failed="0" total="1" passed="1">
   <reporter-output>
   </reporter-output>
-  <suite name="Default suite" duration-ms="78" started-at="2012-04-24T18:14:10Z" finished-at="2012-04-24T18:14:10Z">
+  <suite name="Default suite" duration-ms="47" started-at="2012-04-26T21:21:51Z" finished-at="2012-04-26T21:21:51Z">
     <groups>
     </groups>
-    <test name="Default test" duration-ms="78" started-at="2012-04-24T18:14:10Z" finished-at="2012-04-24T18:14:10Z">
+    <test name="Default test" duration-ms="47" started-at="2012-04-26T21:21:51Z" finished-at="2012-04-26T21:21:51Z">
       <class name="org.gdejohn.similitude.TypeTokenTest">
-        <test-method status="PASS" signature="testNonGenericObject()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@4a63d8]" name="testNonGenericObject" duration-ms="26" started-at="2012-04-24T18:14:10Z" finished-at="2012-04-24T18:14:10Z">
-        </test-method> <!-- testNonGenericObject -->
-        <test-method status="PASS" signature="testNonGenericTokenEquality()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@4a63d8]" name="testNonGenericTokenEquality" duration-ms="17" started-at="2012-04-24T18:14:10Z" finished-at="2012-04-24T18:14:10Z">
-        </test-method> <!-- testNonGenericTokenEquality -->
-        <test-method status="PASS" signature="testNonGenericType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@4a63d8]" name="testNonGenericType" duration-ms="3" started-at="2012-04-24T18:14:10Z" finished-at="2012-04-24T18:14:10Z">
-        </test-method> <!-- testNonGenericType -->
-        <test-method status="PASS" signature="testNonGenericTypeToString()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@4a63d8]" name="testNonGenericTypeToString" duration-ms="3" started-at="2012-04-24T18:14:10Z" finished-at="2012-04-24T18:14:10Z">
-        </test-method> <!-- testNonGenericTypeToString -->
+        <test-method status="PASS" signature="inheritedFields()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@152c4d9]" name="inheritedFields" duration-ms="31" started-at="2012-04-26T21:21:51Z" finished-at="2012-04-26T21:21:51Z">
+        </test-method> <!-- inheritedFields -->
       </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
     </test> <!-- Default test -->
   </suite> <!-- Default suite -->

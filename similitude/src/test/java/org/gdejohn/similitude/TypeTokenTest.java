@@ -1,9 +1,14 @@
 package org.gdejohn.similitude;
 
 import static java.lang.Integer.valueOf;
+import static java.util.Arrays.asList;
 import static ch.qos.logback.classic.Level.*;
 import static org.gdejohn.similitude.TypeToken.*;
 import static org.testng.Assert.*;
+
+import java.lang.reflect.Field;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -24,7 +29,7 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public void testNonGenericType( )
+	public void nonGenericType( )
 	{
 		try
 		{
@@ -45,7 +50,7 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public void testNonGenericTypeToString( )
+	public void nonGenericTypeToString( )
 	{
 		try
 		{
@@ -68,7 +73,7 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public void testNonGenericObject( )
+	public void nonGenericObject( )
 	{
 		try
 		{
@@ -91,11 +96,11 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public void testNonGenericEquality( )
+	public void nonGenericEquality( )
 	{
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			TypeToken<? extends String> foo = typeOf("foo");
 			
@@ -103,17 +108,58 @@ public class TypeTokenTest
 			
 			TypeToken<? extends Integer> baz = typeOf(valueOf(0));
 			
-			assertTrue(foo.equals(foo));
-			assertTrue(bar.equals(bar));
-			assertTrue(baz.equals(baz));
+			assertEquals(foo, foo);
+			assertEquals(bar, bar);
+			assertEquals(baz, baz);
 			
-			assertTrue(foo.equals(bar));
-			assertTrue(bar.equals(foo));
+			assertEquals(foo, bar);
+			assertEquals(bar, foo);
 			
-			assertFalse(foo.equals(baz));
-			assertFalse(baz.equals(foo));
-			assertFalse(bar.equals(baz));
-			assertFalse(baz.equals(bar));
+			assertNotEquals(foo, baz);
+			assertNotEquals(baz, foo);
+			assertNotEquals(bar, baz);
+			assertNotEquals(baz, bar);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void inheritedFields( )
+	{
+		class Parent
+		{
+			@SuppressWarnings("unused")
+			private final String parentField = "parent";
+		}
+		
+		class Child extends Parent
+		{
+			@SuppressWarnings("unused")
+			private final String childField = "child"; 
+		}
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			Field parentField = Parent.class.getDeclaredField("parentField");
+			
+			Field childField = Child.class.getDeclaredField("childField");
+			
+			Set<Field> expected = new LinkedHashSet<Field>(asList(parentField, childField));
+			
+			TypeToken<Child> token = typeOf(Child.class);
+			
+			Set<Field> actual = token.getAllInstanceFields( );
+			
+			assertEquals(actual, expected);
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
 		}
 		finally
 		{
