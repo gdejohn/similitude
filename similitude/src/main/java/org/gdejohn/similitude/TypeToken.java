@@ -5,9 +5,11 @@ import static java.lang.Math.nextUp;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.deepHashCode;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -20,8 +22,8 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.slf4j.Logger;
 
@@ -40,6 +42,8 @@ public class TypeToken<T>
 	private final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS;
 	
 	private Set<Field> instanceFields = null;
+	
+	private Set<Constructor<T>> constructors = null;
 	
 	private Integer hashCode = null;
 	
@@ -202,18 +206,16 @@ public class TypeToken<T>
 			RAW_TYPE.getTypeParameters( )
 		);
 		
-		final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS;
-		
-		final Set<Field> INSTANCE_FIELDS = getAllInstanceFields(RAW_TYPE);
-		
 		if (TYPE_PARAMETERS.length == 0)
 		{
 			LOGGER.debug("Non-generic type.");
 			
-			TYPE_ARGUMENTS = NO_TYPE_ARGUMENTS;
+			return typeOf(RAW_TYPE, NO_TYPE_ARGUMENTS);
 		}
 		else
 		{
+			final Set<Field> INSTANCE_FIELDS = getAllInstanceFields(RAW_TYPE);
+			
 			final Map<Type, Object> PARAMETERIZATIONS =
 			(
 				new LinkedHashMap<Type, Object>
@@ -245,7 +247,7 @@ public class TypeToken<T>
 				}
 			}
 			
-			TYPE_ARGUMENTS =
+			final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS =
 			(
 				new LinkedHashMap<TypeVariable<?>, TypeToken<?>>
 				(
@@ -261,13 +263,13 @@ public class TypeToken<T>
 					typeOf(TYPE_VARIABLE, null, PARAMETERIZATIONS)
 				);
 			}
+			
+			final TypeToken<? extends T> TYPE = typeOf(RAW_TYPE, TYPE_ARGUMENTS);
+			
+			TYPE.instanceFields = INSTANCE_FIELDS;
+			
+			return TYPE;
 		}
-		
-		final TypeToken<? extends T> TYPE = typeOf(RAW_TYPE, TYPE_ARGUMENTS);
-		
-		TYPE.instanceFields = INSTANCE_FIELDS;
-		
-		return TYPE;
 	}
 	
 	public Class<T> getRawType( )
@@ -334,6 +336,109 @@ public class TypeToken<T>
 		}
 		
 		return instanceFields;
+	}
+	
+	public Set<Constructor<T>> getAccessibleConstructors( )
+	{
+		if (constructors == null)
+		{ // First time this method has been invoked on this instance.
+			constructors =
+			(
+				new LinkedHashSet<Constructor<T>>( )
+			);
+			
+			try
+			{
+				try
+				{
+					for (final Constructor<?> RAW : RAW_TYPE.getDeclaredConstructors( ))
+					{
+						try
+						{
+							/*
+							 * Passing the array of Class instances representing
+							 * the parameter types uniquely identifying the RAW
+							 * constructor to Class.getDeclaredConstructor()
+							 * returns the same constructor, but with the required
+							 * type information.
+							 */
+							final Constructor<T> PARAMETERIZED =
+							(
+								RAW_TYPE.getDeclaredConstructor
+								(
+									RAW.getParameterTypes( )
+								)
+							);
+							
+							/*
+							 * Constructors that wouldn't normally be accessible (e.g.
+							 * private) need to be made accessible before they can be
+							 * invoked.
+							 */
+							PARAMETERIZED.setAccessible(true);
+							
+							constructors.add(PARAMETERIZED);
+						}
+						catch (final SecurityException e)
+						{
+							LOGGER.debug
+							(
+								"Non-public constructors not available for type: {}",
+								RAW_TYPE.getSimpleName( )
+							);
+							
+							continue;
+						}
+					}
+				}
+				catch (final SecurityException e)
+				{
+					LOGGER.debug
+					(
+						"Non-public constructors not available for type: {}",
+						RAW_TYPE.getSimpleName( )
+					);
+					
+					for (final Constructor<?> RAW : RAW_TYPE.getConstructors( ))
+					{
+						constructors.add
+						(
+							RAW_TYPE.getDeclaredConstructor
+							(
+								RAW.getParameterTypes( )
+							)
+						);
+					}
+				}
+			}
+			catch (final SecurityException e)
+			{
+				LOGGER.debug
+				(
+					"Public constructors not available for: {}",
+					RAW_TYPE.getSimpleName( )
+				);
+				
+				constructors = emptySet( );
+			}
+			catch (final NoSuchMethodException e)
+			{
+				LOGGER.error
+				(
+					"Constructor not found.",
+					e
+				);
+				
+				throw new RuntimeException(e);
+			}
+			
+			if (constructors == null)
+			{
+				throw new RuntimeException( );
+			}
+		}
+		
+		return constructors;
 	}
 	
 	@Override

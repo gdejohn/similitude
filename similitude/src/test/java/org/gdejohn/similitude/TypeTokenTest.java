@@ -9,6 +9,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.fail;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -208,17 +209,64 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
-			Third<String> third = new Third<String>("xyzzy");
+			String string = "xyzzy";
 			
+			Third<String> third = new Third<String>(string);
 			Second<Third<String>> second = new Second<Third<String>>(third);
-			
 			First<Second<Third<String>>> first = new First<Second<Third<String>>>(second);
 			
-			TypeToken<? extends First<Second<Third<String>>>> token = typeOf(first);
+			TypeToken<? extends First<Second<Third<String>>>> firstToken = typeOf(first);
 			
-			assertEquals(token.toString( ), "First<Second<Third<String>>>");
+			TypeToken<?> secondToken = firstToken.getTypeArgument(First.class.getTypeParameters( )[0]);
+			TypeToken<?> thirdToken = secondToken.getTypeArgument(Second.class.getTypeParameters( )[0]);
+			TypeToken<?> stringToken = thirdToken.getTypeArgument(Third.class.getTypeParameters( )[0]);
+			
+			assertEquals(firstToken.toString( ), "First<Second<Third<String>>>");
+			assertEquals(firstToken.getRawType( ), first.getClass( ));
+
+			assertEquals(secondToken.toString( ), "Second<Third<String>>");
+			assertEquals(secondToken.getRawType( ), second.getClass( ));
+			assertEquals(secondToken, typeOf(second));
+
+			assertEquals(thirdToken.toString( ), "Third<String>");
+			assertEquals(thirdToken.getRawType( ), third.getClass( ));
+			assertEquals(thirdToken, typeOf(third));
+
+			assertEquals(stringToken.toString( ), "String");
+			assertEquals(stringToken.getRawType( ), string.getClass( ));
+			assertEquals(stringToken, typeOf(string));
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void privateConstructor( )
+	{
+		class Private
+		{
+			private Private( )
+			{
+				super( );
+			}
+		}
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			Set<Constructor<Private>> constructors = typeOf(Private.class).getAccessibleConstructors( );
+			
+			assertEquals(constructors.size( ), 1);
+			assertEquals(constructors.iterator( ).next( ), Private.class.getDeclaredConstructor( ));
 		}
 		catch (Exception e)
 		{

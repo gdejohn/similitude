@@ -48,7 +48,7 @@
               <ul>
                 <li>
                   <a href="#" class="navigator-link " panel-name="test-xml-Default_suite">
-                    <span>C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse-35100597\testng-customsuite.xml</span>
+                    <span>C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--1521051125\testng-customsuite.xml</span>
                   </a> <!-- navigator-link  -->
                 </li>
                 <li>
@@ -90,7 +90,7 @@
               <div class="suite-section-content">
                 <ul>
                   <li>
-                    <span class="method-stats">6 methods,   6 passed</span>
+                    <span class="method-stats">7 methods,   7 passed</span>
                   </li>
                   <li>
                     <span class="method-list-title passed">Passed methods</span>
@@ -127,6 +127,11 @@
                       <span>
                         <img width="3%" src="passed.png"/>
                         <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.TypeTokenTest" hash-for-method="nonGenericTypeToString">nonGenericTypeToString</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.TypeTokenTest" hash-for-method="privateConstructor">privateConstructor</a> <!-- method navigator-link -->
                       </span>
                       <br/>
                     </div> <!-- method-list-content passed suite-Default_suite -->
@@ -189,12 +194,19 @@
                   <span class="method-name">nonGenericTypeToString</span>
                 </div> <!-- method-content -->
               </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="privateConstructor">
+                  </a> <!-- privateConstructor -->
+                  <span class="method-name">privateConstructor</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
             </div> <!-- main-panel-content rounded-window-bottom -->
           </div> <!-- suite-Default_suite-class-passed -->
         </div> <!-- panel Default_suite -->
         <div panel-name="test-xml-Default_suite" class="panel">
           <div class="main-panel-header rounded-window-top">
-            <span class="header-content">C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse-35100597\testng-customsuite.xml</span>
+            <span class="header-content">C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--1521051125\testng-customsuite.xml</span>
           </div> <!-- main-panel-header rounded-window-top -->
           <div class="main-panel-content rounded-window-bottom">
             <pre>
@@ -243,36 +255,40 @@ data.addColumn('number', 'Number');
 data.addColumn('string', 'Method');
 data.addColumn('string', 'Class');
 data.addColumn('number', 'Time (ms)');
-data.addRows(6);
+data.addRows(7);
 data.setCell(0, 0, 0)
-data.setCell(0, 1, 'instanceOfTopLevelGenericType')
+data.setCell(0, 1, 'privateConstructor')
 data.setCell(0, 2, 'org.gdejohn.similitude.TypeTokenTest')
 data.setCell(0, 3, 16);
 data.setCell(1, 0, 1)
 data.setCell(1, 1, 'inheritedFields')
 data.setCell(1, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(1, 3, 15);
+data.setCell(1, 3, 16);
 data.setCell(2, 0, 2)
 data.setCell(2, 1, 'nonGenericEquality')
 data.setCell(2, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(2, 3, 0);
+data.setCell(2, 3, 15);
 data.setCell(3, 0, 3)
-data.setCell(3, 1, 'nonGenericTypeToString')
+data.setCell(3, 1, 'nonGenericType')
 data.setCell(3, 2, 'org.gdejohn.similitude.TypeTokenTest')
 data.setCell(3, 3, 0);
 data.setCell(4, 0, 4)
-data.setCell(4, 1, 'nonGenericObject')
+data.setCell(4, 1, 'instanceOfTopLevelGenericType')
 data.setCell(4, 2, 'org.gdejohn.similitude.TypeTokenTest')
 data.setCell(4, 3, 0);
 data.setCell(5, 0, 5)
-data.setCell(5, 1, 'nonGenericType')
+data.setCell(5, 1, 'nonGenericTypeToString')
 data.setCell(5, 2, 'org.gdejohn.similitude.TypeTokenTest')
 data.setCell(5, 3, 0);
+data.setCell(6, 0, 6)
+data.setCell(6, 1, 'nonGenericObject')
+data.setCell(6, 2, 'org.gdejohn.similitude.TypeTokenTest')
+data.setCell(6, 3, 0);
 window.suiteTableData['Default_suite']= { tableData: data, tableDiv: 'times-div-Default_suite'}
 return data;
 }
               </script>
-              <span class="suite-total-time">Total running time: 31 ms</span>
+              <span class="suite-total-time">Total running time: 47 ms</span>
               <div id="times-div-Default_suite">
               </div> <!-- times-div-Default_suite -->
             </div> <!-- times-div -->
@@ -305,23 +321,27 @@ return data;
               </div> <!-- test-method -->
               <div class="test-method">
                 <span class="method-name">instanceOfTopLevelGenericType</span>
-                <span class="method-start">15 ms</span>
+                <span class="method-start">16 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
                 <span class="method-name">nonGenericEquality</span>
-                <span class="method-start">47 ms</span>
+                <span class="method-start">16 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
                 <span class="method-name">nonGenericObject</span>
-                <span class="method-start">47 ms</span>
+                <span class="method-start">31 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
                 <span class="method-name">nonGenericType</span>
-                <span class="method-start">47 ms</span>
+                <span class="method-start">31 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
                 <span class="method-name">nonGenericTypeToString</span>
-                <span class="method-start">47 ms</span>
+                <span class="method-start">31 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">privateConstructor</span>
+                <span class="method-start">31 ms</span>
               </div> <!-- test-method -->
           </div> <!-- main-panel-content rounded-window-bottom -->
         </div> <!-- panel -->
