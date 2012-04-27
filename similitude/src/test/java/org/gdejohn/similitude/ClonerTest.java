@@ -14,7 +14,6 @@ import static org.testng.Assert.fail;
 import static org.gdejohn.similitude.TypeToken.*;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
@@ -122,27 +121,6 @@ public class ClonerTest
 		catch (Exception e)
 		{
 			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
-	}
-	
-	@Test
-	public void testFindTypeArgument( )
-	{
-		try
-		{
-			ROOT_LOGGER.setLevel(DEBUG);
-			
-			Method method = Test1.class.getDeclaredMethod("lam", Test8.class);
-			
-			System.out.println(TypeToken.traceTypeVariable((TypeVariable<?>)method.getGenericReturnType( ), method.getGenericParameterTypes( )[0]));
-		}
-		catch (Exception e)
-		{
-			fail("", e);
 		}
 		finally
 		{

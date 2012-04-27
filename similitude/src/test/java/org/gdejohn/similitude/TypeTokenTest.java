@@ -5,16 +5,18 @@ import static ch.qos.logback.classic.Level.WARN;
 import static java.lang.Integer.valueOf;
 import static java.util.Arrays.asList;
 import static org.gdejohn.similitude.TypeToken.typeOf;
+import static org.slf4j.Logger.ROOT_LOGGER_NAME;
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.fail;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import ch.qos.logback.classic.Logger;
@@ -24,7 +26,7 @@ public class TypeTokenTest
 {
 	private static final Logger ROOT_LOGGER =
 	(
-		(Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
+		(Logger)getLogger(ROOT_LOGGER_NAME)
 	);
 	
 	static
@@ -174,14 +176,25 @@ public class TypeTokenTest
 	@Test
 	public static void instanceOfTopLevelGenericType( )
 	{
+		class Zeroth<Z>
+		{
+			@SuppressWarnings("unused")
+			private Z field;
+			
+			Zeroth(Z arg)
+			{
+				field = arg;
+			}
+		}
+		
 		class First<F>
 		{
 			@SuppressWarnings("unused")
-			private F field;
+			private Zeroth<F> field;
 			
 			First(F arg)
 			{
-				field = arg;
+				field = new Zeroth<F>(arg);
 			}
 		}
 		
@@ -223,19 +236,19 @@ public class TypeTokenTest
 			TypeToken<?> thirdToken = secondToken.getTypeArgument(Second.class.getTypeParameters( )[0]);
 			TypeToken<?> stringToken = thirdToken.getTypeArgument(Third.class.getTypeParameters( )[0]);
 			
-			assertEquals(firstToken.toString( ), "First<Second<Third<String>>>");
 			assertEquals(firstToken.getRawType( ), first.getClass( ));
-
-			assertEquals(secondToken.toString( ), "Second<Third<String>>");
+			assertEquals(firstToken.toString( ), "First<Second<Third<String>>>");
+			
 			assertEquals(secondToken.getRawType( ), second.getClass( ));
+			assertEquals(secondToken.toString( ), "Second<Third<String>>");
 			assertEquals(secondToken, typeOf(second));
 
-			assertEquals(thirdToken.toString( ), "Third<String>");
 			assertEquals(thirdToken.getRawType( ), third.getClass( ));
+			assertEquals(thirdToken.toString( ), "Third<String>");
 			assertEquals(thirdToken, typeOf(third));
 
-			assertEquals(stringToken.toString( ), "String");
 			assertEquals(stringToken.getRawType( ), string.getClass( ));
+			assertEquals(stringToken.toString( ), "String");
 			assertEquals(stringToken, typeOf(string));
 		}
 		catch (Exception e)
@@ -261,12 +274,62 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			Set<Constructor<Private>> constructors = typeOf(Private.class).getAccessibleConstructors( );
 			
 			assertEquals(constructors.size( ), 1);
 			assertEquals(constructors.iterator( ).next( ), Private.class.getDeclaredConstructor( ));
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void parameterizedType( )
+	{
+		class First<F>
+		{
+			@SuppressWarnings("unused")
+			F field;
+			
+			First(F arg)
+			{
+				field = arg;
+			}
+		}
+		
+		class Second<S>
+		{
+			@SuppressWarnings("unused")
+			First<S> field;
+			
+			public Second(First<S> arg)
+			{
+				field = arg;
+			}
+		}
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			String string = "xyzzy";
+			First<String> first = new First<String>(string);
+			Second<String> second = new Second<String>(first);
+			
+			Type parameterType = Second.class.getConstructor(First.class).getGenericParameterTypes( )[0];
+			
+			TypeToken<?> constructorParameter = typeOf(parameterType, typeOf(second));
+			
+			assertEquals(constructorParameter, typeOf(first));
+			assertEquals(constructorParameter.getTypeArgument(First.class.getTypeParameters( )[0]), typeOf(string));
 		}
 		catch (Exception e)
 		{

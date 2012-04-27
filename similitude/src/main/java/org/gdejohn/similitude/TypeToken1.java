@@ -174,13 +174,8 @@ public class TypeToken1<E>
 		}
 	}
 	
-	public static TypeToken1<?> typeOf(final ParameterizedType TYPE, final TypeToken1<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	public static TypeToken1<?> typeOf(final ParameterizedType PARAMETERIZED_TYPE, final TypeToken1<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		final ParameterizedType PARAMETERIZED_TYPE =
-		(
-			(ParameterizedType)TYPE
-		);
-		
 		final Type RAW_TYPE = PARAMETERIZED_TYPE.getRawType( );
 		
 		final Class<?> CLASS;
@@ -1061,7 +1056,7 @@ public class TypeToken1<E>
 	
 	public static void main(String[ ] args) throws Exception
 	{
-		System.out.println(typeOf(new First<Second<Third<Integer>>>(new Second<Third<Integer>>(new Third<Integer>(0)))));
+		//System.out.println(typeOf(new First<Second<Third<Integer>>>(new Second<Third<Integer>>(new Third<Integer>(0)))));
 		//System.out.println(typeOf(String.class).getReturnType(TypeToken1.class.getDeclaredMethod("bar", First.class), new First<Second<Third<Integer>>>( )));
 		//Map<TypeVariable<?>, TypeToken1<?>> map = new LinkedHashMap<TypeVariable<?>, TypeToken1<?>>( );
 		//map.put(Foo.class.getTypeParameters( )[0], typeOf(Map.class));

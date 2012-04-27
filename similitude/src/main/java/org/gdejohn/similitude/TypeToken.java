@@ -67,11 +67,168 @@ public class TypeToken<T>
 		return new TypeToken<T>(CLASS, TYPE_ARGUMENTS);
 	}
 	
+	public static <T> TypeToken<T> typeOf(final Class<T> RAW_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	{
+		final TypeVariable<Class<T>>[ ] TYPE_PARAMETERS =
+		(
+			RAW_TYPE.getTypeParameters( )
+		);
+		
+		if (TYPE_PARAMETERS.length == 0)
+		{
+			return typeOf(RAW_TYPE, NO_TYPE_ARGUMENTS);
+		}
+		else
+		{
+			final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS =
+			(
+				new LinkedHashMap<TypeVariable<?>, TypeToken<?>>
+				(
+					TYPE_PARAMETERS.length, nextUp(1.0f)
+				)
+			);
+			
+			for (final TypeVariable<?> TYPE_VARIABLE : TYPE_PARAMETERS)
+			{
+				TYPE_ARGUMENTS.put
+				(
+					TYPE_VARIABLE,
+					typeOf(TYPE_VARIABLE, PARENT, PARAMETERIZATIONS)
+				);
+			}
+			
+			return typeOf(RAW_TYPE, TYPE_ARGUMENTS);
+		}
+	}
+	
+	public static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT)
+	{
+		return typeOf(CLASS, PARENT, null);
+	}
+	
 	public static <T> TypeToken<T> typeOf(final Class<T> CLASS)
 	{
-		LOGGER.debug("Getting type of class: {}", CLASS.getSimpleName( ));
+		return typeOf(CLASS, (TypeToken<?>)null);
+	}
+	
+	public static <T> TypeToken<? extends T> typeOf(final T OBJECT)
+	{
+		LOGGER.debug("Getting type of object: {}", OBJECT);
 		
-		return typeOf(CLASS, NO_TYPE_ARGUMENTS);
+		@SuppressWarnings("unchecked")
+		final Class<? extends T> RAW_TYPE =
+		(
+			(Class<? extends T>)OBJECT.getClass( )
+		);
+		
+		final Set<Field> INSTANCE_FIELDS = getAllInstanceFields(RAW_TYPE);
+		
+		final Map<Type, Object> PARAMETERIZATIONS =
+		(
+			new LinkedHashMap<Type, Object>
+			(
+				INSTANCE_FIELDS.size( ), nextUp(1.0f)
+			)
+		);
+		
+		for (final Field FIELD : INSTANCE_FIELDS)
+		{
+			try
+			{
+				FIELD.setAccessible(true);
+				
+				final Object VALUE = FIELD.get(OBJECT);
+				
+				if (VALUE != null)
+				{
+					PARAMETERIZATIONS.put(FIELD.getGenericType( ), VALUE);
+				}
+			}
+			catch (final SecurityException e)
+			{
+				continue;
+			}
+			catch (final IllegalAccessException e)
+			{ // SecurityException should always be thrown before this.
+				throw new RuntimeException(e);
+			}
+		}
+		
+		return typeOf(RAW_TYPE, null, PARAMETERIZATIONS);
+	}
+	
+	public static TypeToken<?> typeOf(final WildcardType WILDCARD_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	{
+		throw new UnsupportedOperationException( );
+	}
+	
+	public static TypeToken<?> typeOf(final GenericArrayType ARRAY_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	{
+		throw new UnsupportedOperationException( );
+	}
+	
+	public static TypeToken<?> typeOf(final ParameterizedType PARAMETERIZED_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	{
+		final Type RAW_TYPE = PARAMETERIZED_TYPE.getRawType( );
+		
+		if (RAW_TYPE instanceof Class)
+		{
+			final Class<?> CLASS = (Class<?>)RAW_TYPE;
+			
+			final TypeVariable<?>[ ] TYPE_PARAMETERS =
+			(
+				CLASS.getTypeParameters( )
+			);
+			
+			final Type[ ] ACTUAL_TYPE_ARGUMENTS =
+			(
+				PARAMETERIZED_TYPE.getActualTypeArguments( )
+			);
+			
+			final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS =
+			(
+				new LinkedHashMap<TypeVariable<?>, TypeToken<?>>( )
+			);
+			
+			if (TYPE_PARAMETERS.length == ACTUAL_TYPE_ARGUMENTS.length)
+			{
+				for (int index = 0; index < TYPE_PARAMETERS.length; index++)
+				{
+					TYPE_ARGUMENTS.put
+					(
+						TYPE_PARAMETERS[index],
+						typeOf
+						(
+							ACTUAL_TYPE_ARGUMENTS[index],
+							PARENT,
+							PARAMETERIZATIONS
+						)
+					);
+				}
+				
+				return typeOf(CLASS, TYPE_ARGUMENTS);
+			}
+			else
+			{
+				throw
+				(
+					new RuntimeException
+					(
+						"Different number of type variables and arguments."
+					)
+				);
+			}
+		}
+		else
+		{
+			throw
+			(
+				new RuntimeException
+				(
+					"Raw type not instance of java.lang.Class"
+				)
+			);
+		}
 	}
 	
 	private static LinkedList<TypeVariable<?>> traceTypeVariable(final TypeVariable<?> TYPE_VARIABLE, final Type TYPE)
@@ -88,7 +245,7 @@ public class TypeToken<T>
 			}
 		}
 		else if (TYPE instanceof WildcardType)
-		{ // Check upper bounds.
+		{ // Check upper bound.
 			throw new UnsupportedOperationException( );
 		}
 		else if (TYPE instanceof GenericArrayType)
@@ -124,7 +281,7 @@ public class TypeToken<T>
 			{
 				try
 				{
-					final LinkedList<TypeVariable<?>> REST =
+					final LinkedList<TypeVariable<?>> TRACE =
 					(
 						traceTypeVariable
 						(
@@ -132,9 +289,9 @@ public class TypeToken<T>
 						)
 					);
 					
-					REST.addFirst(TYPE_PARAMETERS[index]);
+					TRACE.addFirst(TYPE_PARAMETERS[index]);
 					
-					return REST;
+					return TRACE;
 				}
 				catch (final RuntimeException e)
 				{
@@ -191,85 +348,42 @@ public class TypeToken<T>
 		throw new RuntimeException("Type argument couldn't be determined.");
 	}
 	
-	public static <T> TypeToken<? extends T> typeOf(final T OBJECT)
+	public static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		LOGGER.debug("Getting type of object: {}", OBJECT);
-		
-		@SuppressWarnings("unchecked")
-		final Class<? extends T> RAW_TYPE =
-		(
-			(Class<? extends T>)OBJECT.getClass( )
-		);
-		
-		final TypeVariable<?>[ ] TYPE_PARAMETERS =
-		(
-			RAW_TYPE.getTypeParameters( )
-		);
-		
-		if (TYPE_PARAMETERS.length == 0)
+		if (TYPE instanceof Class)
 		{
-			LOGGER.debug("Non-generic type.");
-			
-			return typeOf(RAW_TYPE, NO_TYPE_ARGUMENTS);
+			return typeOf((Class<?>)TYPE, PARENT, PARAMETERIZATIONS);
+		}
+		else if (TYPE instanceof WildcardType)
+		{
+			return typeOf((WildcardType)TYPE, PARENT, PARAMETERIZATIONS);
+		}
+		else if (TYPE instanceof GenericArrayType)
+		{
+			return typeOf((GenericArrayType)TYPE, PARENT, PARAMETERIZATIONS);
+		}
+		else if (TYPE instanceof ParameterizedType)
+		{
+			return typeOf((ParameterizedType)TYPE, PARENT, PARAMETERIZATIONS);
+		}
+		else if (TYPE instanceof TypeVariable)
+		{
+			return typeOf((TypeVariable<?>)TYPE, PARENT, PARAMETERIZATIONS);
 		}
 		else
 		{
-			final Set<Field> INSTANCE_FIELDS = getAllInstanceFields(RAW_TYPE);
-			
-			final Map<Type, Object> PARAMETERIZATIONS =
-			(
-				new LinkedHashMap<Type, Object>
-				(
-					INSTANCE_FIELDS.size( ), nextUp(1.0f)
-				)
-			);
-			
-			for (final Field FIELD : INSTANCE_FIELDS)
-			{
-				try
-				{
-					FIELD.setAccessible(true);
-					
-					final Object VALUE = FIELD.get(OBJECT);
-					
-					if (VALUE != null)
-					{
-						PARAMETERIZATIONS.put(FIELD.getGenericType( ), VALUE);
-					}
-				}
-				catch (final SecurityException e)
-				{
-					continue;
-				}
-				catch (final IllegalAccessException e)
-				{ // SecurityException should always be thrown before this.
-					throw new RuntimeException(e);
-				}
-			}
-			
-			final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS =
-			(
-				new LinkedHashMap<TypeVariable<?>, TypeToken<?>>
-				(
-					TYPE_PARAMETERS.length, nextUp(1.0f)
-				)
-			);
-			
-			for (final TypeVariable<?> TYPE_VARIABLE : TYPE_PARAMETERS)
-			{
-				TYPE_ARGUMENTS.put
-				(
-					TYPE_VARIABLE,
-					typeOf(TYPE_VARIABLE, null, PARAMETERIZATIONS)
-				);
-			}
-			
-			final TypeToken<? extends T> TYPE = typeOf(RAW_TYPE, TYPE_ARGUMENTS);
-			
-			TYPE.instanceFields = INSTANCE_FIELDS;
-			
-			return TYPE;
+			throw new RuntimeException("Subtype of type not recognized.");
 		}
+	}
+	
+	public static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT)
+	{
+		return typeOf(TYPE, PARENT, null);
+	}
+	
+	public static TypeToken<?> typeOf(final Type TYPE)
+	{
+		return typeOf(TYPE, (TypeToken<?>)null);
 	}
 	
 	public Class<T> getRawType( )
@@ -351,7 +465,7 @@ public class TypeToken<T>
 			{
 				try
 				{
-					for (final Constructor<?> RAW : RAW_TYPE.getDeclaredConstructors( ))
+					for (final Constructor<?> DECLARED : RAW_TYPE.getDeclaredConstructors( ))
 					{
 						try
 						{
@@ -366,7 +480,7 @@ public class TypeToken<T>
 							(
 								RAW_TYPE.getDeclaredConstructor
 								(
-									RAW.getParameterTypes( )
+									DECLARED.getParameterTypes( )
 								)
 							);
 							
@@ -399,13 +513,13 @@ public class TypeToken<T>
 						RAW_TYPE.getSimpleName( )
 					);
 					
-					for (final Constructor<?> RAW : RAW_TYPE.getConstructors( ))
+					for (final Constructor<?> PUBLIC : RAW_TYPE.getConstructors( ))
 					{
 						constructors.add
 						(
 							RAW_TYPE.getDeclaredConstructor
 							(
-								RAW.getParameterTypes( )
+								PUBLIC.getParameterTypes( )
 							)
 						);
 					}
@@ -454,7 +568,7 @@ public class TypeToken<T>
 					(
 						new Object[ ]
 						{
-							RAW_TYPE, TYPE_ARGUMENTS
+							RAW_TYPE, TYPE_ARGUMENTS.values( ).toArray( )
 						}
 					)
 				)
