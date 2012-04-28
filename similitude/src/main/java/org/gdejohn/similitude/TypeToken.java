@@ -12,6 +12,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -405,6 +406,58 @@ public class TypeToken<T>
 		else
 		{
 			throw new RuntimeException("Type variable not found.");
+		}
+	}
+	
+	public TypeToken<?> getReturnType(final Method METHOD, final Object... ARGUMENTS)
+	{
+		final Class<?>[ ] PARAMETERS =
+		(
+			METHOD.getParameterTypes( )
+		);
+		
+		if (PARAMETERS.length == ARGUMENTS.length)
+		{
+			final Type[ ] GENERIC_PARAMETERS =
+			(
+				METHOD.getGenericParameterTypes( )
+			);
+			
+			if (GENERIC_PARAMETERS.length == ARGUMENTS.length)
+			{
+				final Map<Type, Object> INSTANCES =
+				(
+					new LinkedHashMap<Type, Object>
+					(
+						ARGUMENTS.length, nextUp(1.0f)
+					)
+				);
+				
+				for (int index = 0; index < ARGUMENTS.length; index++)
+				{
+					if (PARAMETERS[index].isInstance(ARGUMENTS[index]))
+					{
+						INSTANCES.put
+						(
+							GENERIC_PARAMETERS[index], ARGUMENTS[index]
+						);
+					}
+					else if (ARGUMENTS[index] != null)
+					{
+						throw new RuntimeException( );
+					}
+				}
+				
+				return typeOf(METHOD.getGenericReturnType( ), this, INSTANCES);
+			}
+			else
+			{
+				throw new RuntimeException( );
+			}
+		}
+		else
+		{
+			throw new RuntimeException( );
 		}
 	}
 	

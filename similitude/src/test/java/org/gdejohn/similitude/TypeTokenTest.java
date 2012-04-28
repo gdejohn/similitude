@@ -13,6 +13,7 @@ import static org.testng.Assert.fail;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -318,7 +319,7 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			String string = "xyzzy";
 			First<String> first = new First<String>(string);
@@ -330,6 +331,61 @@ public class TypeTokenTest
 			
 			assertEquals(constructorParameter, typeOf(first));
 			assertEquals(constructorParameter.getTypeArgument(First.class.getTypeParameters( )[0]), typeOf(string));
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void genericMethodReturnType( )
+	{
+		class Parameter<P>
+		{
+			@SuppressWarnings("unused")
+			P field;
+			
+			Parameter(P arg)
+			{
+				field = arg;
+			}
+		}
+		
+		class ReturnType<R, S> { }
+		
+		class Clazz<C>
+		{
+			@SuppressWarnings("unused")
+			C field;
+			
+			Clazz(C arg)
+			{
+				field = arg;
+			}
+			
+			@SuppressWarnings("unused")
+			public <T> ReturnType<T, C> method(Parameter<T> arg)
+			{
+				return null;
+			}
+		}
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			Method method = Clazz.class.getMethod("method", Parameter.class);
+			
+			TypeToken<?> returnType = typeOf(new Clazz<String>("xyzzy")).getReturnType(method, new Parameter<Integer>(valueOf(1)));
+			
+			assertEquals(returnType.getRawType( ), ReturnType.class);
+			assertEquals(returnType.getTypeArgument(ReturnType.class.getTypeParameters( )[0]).getRawType( ), Integer.class);
+			assertEquals(returnType.getTypeArgument(ReturnType.class.getTypeParameters( )[1]).getRawType( ), String.class);
 		}
 		catch (Exception e)
 		{
