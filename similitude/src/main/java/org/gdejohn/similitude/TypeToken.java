@@ -2,6 +2,7 @@ package org.gdejohn.similitude;
 
 import static java.lang.Integer.valueOf;
 import static java.lang.Math.nextUp;
+import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.deepHashCode;
 import static java.util.Collections.emptyMap;
@@ -42,6 +43,8 @@ public class TypeToken<T>
 	
 	private final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS;
 	
+	private final TypeToken<?> ENCLOSING_TYPE;
+	
 	private Set<Field> instanceFields = null;
 	
 	private Set<Constructor<T>> constructors = null;
@@ -50,13 +53,14 @@ public class TypeToken<T>
 	
 	private String toString = null;
 	
-	private TypeToken(final Class<T> RAW_TYPE, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS)
+	private TypeToken(final Class<T> RAW_TYPE, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS, final TypeToken<?> ENCLOSING_TYPE)
 	{
 		this.RAW_TYPE = RAW_TYPE;
 		this.TYPE_ARGUMENTS = TYPE_ARGUMENTS;
+		this.ENCLOSING_TYPE = ENCLOSING_TYPE;
 	}
 	
-	public static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS)
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS, final TypeToken<?> ENCLOSING_TYPE)
 	{
 		LOGGER.debug
 		(
@@ -65,19 +69,31 @@ public class TypeToken<T>
 			TYPE_ARGUMENTS
 		);
 		
-		return new TypeToken<T>(CLASS, TYPE_ARGUMENTS);
+		return new TypeToken<T>(CLASS, TYPE_ARGUMENTS, ENCLOSING_TYPE);
 	}
 	
-	public static <T> TypeToken<T> typeOf(final Class<T> RAW_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS)
+	{
+		LOGGER.debug
+		(
+			"Getting type of class \"{}\" with type arguments \"{}\"",
+			CLASS.getSimpleName( ),
+			TYPE_ARGUMENTS
+		);
+		
+		return typeOf(CLASS, TYPE_ARGUMENTS, null);
+	}
+	
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE)
 	{
 		final TypeVariable<Class<T>>[ ] TYPE_PARAMETERS =
 		(
-			RAW_TYPE.getTypeParameters( )
+			CLASS.getTypeParameters( )
 		);
 		
 		if (TYPE_PARAMETERS.length == 0)
 		{
-			return typeOf(RAW_TYPE, NO_TYPE_ARGUMENTS);
+			return typeOf(CLASS, NO_TYPE_ARGUMENTS, ENCLOSING_TYPE);
 		}
 		else
 		{
@@ -98,13 +114,41 @@ public class TypeToken<T>
 				);
 			}
 			
-			return typeOf(RAW_TYPE, TYPE_ARGUMENTS);
+			return typeOf(CLASS, TYPE_ARGUMENTS, ENCLOSING_TYPE);
 		}
 	}
 	
-	public static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT)
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		return typeOf(CLASS, PARENT, null);
+		final Class<?> ENCLOSING_CLASS = CLASS.getEnclosingClass( );
+		
+		final TypeToken<?> ENCLOSING_TYPE;
+		
+		if (ENCLOSING_CLASS == null)
+		{
+			ENCLOSING_TYPE = null;
+		}
+		else
+		{
+			ENCLOSING_TYPE =
+			(
+				typeOf(ENCLOSING_CLASS, PARENT, PARAMETERIZATIONS)
+			);
+		}
+		
+		return typeOf(CLASS, PARENT, PARAMETERIZATIONS, ENCLOSING_TYPE);
+	}
+	
+	static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT)
+	{
+		if (CLASS == null)
+		{
+			return null;
+		}
+		else
+		{
+			return typeOf(CLASS, PARENT, null);
+		}
 	}
 	
 	public static <T> TypeToken<T> typeOf(final Class<T> CLASS)
@@ -115,6 +159,11 @@ public class TypeToken<T>
 	public static <T> TypeToken<? extends T> typeOf(final T OBJECT)
 	{
 		LOGGER.debug("Getting type of object: {}", OBJECT);
+		
+		if (OBJECT == null)
+		{
+			return null;
+		}
 		
 		@SuppressWarnings("unchecked")
 		final Class<? extends T> RAW_TYPE =
@@ -132,11 +181,18 @@ public class TypeToken<T>
 			)
 		);
 		
-		for (final Field FIELD : INSTANCE_FIELDS)
+		final Iterator<Field> ITERATOR = INSTANCE_FIELDS.iterator( );
+		
+		while (ITERATOR.hasNext( ))
 		{
+			final Field FIELD = ITERATOR.next( );
+			
 			try
 			{
-				FIELD.setAccessible(true);
+				if (isPublic(FIELD.getModifiers( )) == false)
+				{
+					FIELD.setAccessible(true);
+				}
 				
 				final Object VALUE = FIELD.get(OBJECT);
 				
@@ -147,6 +203,8 @@ public class TypeToken<T>
 			}
 			catch (final SecurityException e)
 			{
+				ITERATOR.remove( );
+				
 				continue;
 			}
 			catch (final IllegalAccessException e)
@@ -155,20 +213,77 @@ public class TypeToken<T>
 			}
 		}
 		
-		return typeOf(RAW_TYPE, null, PARAMETERIZATIONS);
+		if (RAW_TYPE.isMemberClass( ) && isStatic(RAW_TYPE.getModifiers( )) == false)
+		{
+			final Class<?> ENCLOSING_CLASS = RAW_TYPE.getEnclosingClass( );
+			
+			for (final Field FIELD : INSTANCE_FIELDS)
+			{
+				if (FIELD.isSynthetic( ))
+				{
+					if (ENCLOSING_CLASS.equals(FIELD.getType( )))
+					{
+						if (FIELD.getName( ).matches("^this\\$\\d++$"))
+						{
+							try
+							{
+								final Object VALUE = FIELD.get(OBJECT);
+								
+								if (VALUE != null)
+								{
+									return
+									(
+										typeOf
+										(
+											RAW_TYPE,
+											null, // PARENT
+											PARAMETERIZATIONS,
+											typeOf(VALUE) // ENCLOSING_TYPE
+										)
+									);
+								}
+								else
+								{
+									break;
+								}
+							}
+							catch (final IllegalAccessException e)
+							{ // Inaccessible fields shouldn't be present.
+								throw new RuntimeException( );
+							}
+						}
+					}
+				}
+			}
+			
+			return
+			(
+				typeOf
+				(
+					RAW_TYPE,
+					null,
+					PARAMETERIZATIONS,
+					typeOf(ENCLOSING_CLASS, null, PARAMETERIZATIONS)
+				)
+			);
+		}
+		else
+		{
+			return typeOf(RAW_TYPE, null, PARAMETERIZATIONS, null);
+		}
 	}
 	
-	public static TypeToken<?> typeOf(final WildcardType WILDCARD_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final WildcardType WILDCARD_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
 		throw new UnsupportedOperationException( );
 	}
 	
-	public static TypeToken<?> typeOf(final GenericArrayType ARRAY_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final GenericArrayType GENERIC_ARRAY_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
 		throw new UnsupportedOperationException( );
 	}
 	
-	public static TypeToken<?> typeOf(final ParameterizedType PARAMETERIZED_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final ParameterizedType PARAMETERIZED_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
 		final Type RAW_TYPE = PARAMETERIZED_TYPE.getRawType( );
 		
@@ -207,7 +322,17 @@ public class TypeToken<T>
 					);
 				}
 				
-				return typeOf(CLASS, TYPE_ARGUMENTS);
+				final TypeToken<?> ENCLOSING_TYPE =
+				(
+					typeOf
+					(
+						PARAMETERIZED_TYPE.getOwnerType( ),
+						PARENT,
+						PARAMETERIZATIONS
+					)
+				);
+				
+				return typeOf(CLASS, TYPE_ARGUMENTS, ENCLOSING_TYPE);
 			}
 			else
 			{
@@ -308,11 +433,11 @@ public class TypeToken<T>
 		}
 	}
 	
-	public static TypeToken<?> typeOf(final TypeVariable<?> TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
 		try
 		{
-			return PARENT.getTypeArgument(TYPE);
+			return PARENT.getTypeArgument(TYPE_VARIABLE);
 		}
 		catch (final Exception e)
 		{
@@ -323,18 +448,18 @@ public class TypeToken<T>
 		{
 			try
 			{
-				final List<TypeVariable<?>> TYPE_VARIABLES =
+				final List<TypeVariable<?>> TRACE =
 				(
-					traceTypeVariable(TYPE, ENTRY.getKey( ))
+					traceTypeVariable(TYPE_VARIABLE, ENTRY.getKey( ))
 				);
 				
 				TypeToken<?> typeArgument = typeOf(ENTRY.getValue( ));
 				
-				for (final TypeVariable<?> TYPE_VARIABLE : TYPE_VARIABLES)
+				for (final TypeVariable<?> TYPE_PARAMETER : TRACE)
 				{
 					typeArgument =
 					(
-						typeArgument.getTypeArgument(TYPE_VARIABLE)
+						typeArgument.getTypeArgument(TYPE_PARAMETER)
 					);
 				}
 				
@@ -349,9 +474,13 @@ public class TypeToken<T>
 		throw new RuntimeException("Type argument couldn't be determined.");
 	}
 	
-	public static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		if (TYPE instanceof Class)
+		if (TYPE == null)
+		{
+			return null;
+		}
+		else if (TYPE instanceof Class)
 		{
 			return typeOf((Class<?>)TYPE, PARENT, PARAMETERIZATIONS);
 		}
@@ -373,11 +502,16 @@ public class TypeToken<T>
 		}
 		else
 		{
+			LOGGER.warn
+			(
+				"Subtype of java.lang.reflect.Type not recognized: {}", TYPE
+			);
+			
 			throw new RuntimeException("Subtype of type not recognized.");
 		}
 	}
 	
-	public static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT)
+	static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT)
 	{
 		return typeOf(TYPE, PARENT, null);
 	}
@@ -390,6 +524,11 @@ public class TypeToken<T>
 	public Class<T> getRawType( )
 	{
 		return RAW_TYPE;
+	}
+	
+	public TypeToken<?> getEnclosingType( )
+	{
+		return ENCLOSING_TYPE;
 	}
 	
 	public Map<TypeVariable<?>, TypeToken<?>> getAllTypeArguments( )
@@ -425,7 +564,7 @@ public class TypeToken<T>
 			
 			if (GENERIC_PARAMETERS.length == ARGUMENTS.length)
 			{
-				final Map<Type, Object> INSTANCES =
+				final Map<Type, Object> PARAMETERIZATIONS =
 				(
 					new LinkedHashMap<Type, Object>
 					(
@@ -437,7 +576,7 @@ public class TypeToken<T>
 				{
 					if (PARAMETERS[index].isInstance(ARGUMENTS[index]))
 					{
-						INSTANCES.put
+						PARAMETERIZATIONS.put
 						(
 							GENERIC_PARAMETERS[index], ARGUMENTS[index]
 						);
@@ -448,7 +587,13 @@ public class TypeToken<T>
 					}
 				}
 				
-				return typeOf(METHOD.getGenericReturnType( ), this, INSTANCES);
+				return
+				(
+					typeOf
+					(
+						METHOD.getGenericReturnType( ), this, PARAMETERIZATIONS
+					)
+				);
 			}
 			else
 			{
@@ -487,14 +632,14 @@ public class TypeToken<T>
 			type = type.getSuperclass( );
 		}
 		
-		return unmodifiableSet(INSTANCE_FIELDS);
+		return INSTANCE_FIELDS;
 	}
 	
 	public Set<Field> getAllInstanceFields( )
 	{
 		if (instanceFields == null)
 		{ // First time this method has been invoked on this instance.
-			instanceFields = getAllInstanceFields(RAW_TYPE);
+			instanceFields = unmodifiableSet(getAllInstanceFields(RAW_TYPE));
 			
 			if (instanceFields == null)
 			{
@@ -523,11 +668,12 @@ public class TypeToken<T>
 						try
 						{
 							/*
-							 * Passing the array of Class instances representing
-							 * the parameter types uniquely identifying the RAW
-							 * constructor to Class.getDeclaredConstructor()
-							 * returns the same constructor, but with the required
-							 * type information.
+							 * Passing the array of Class instances
+							 * representing the parameter types uniquely
+							 * identifying the RAW constructor to
+							 * Class.getDeclaredConstructor() returns the same
+							 * constructor, but with the required type
+							 * information.
 							 */
 							final Constructor<T> PARAMETERIZED =
 							(
@@ -538,9 +684,9 @@ public class TypeToken<T>
 							);
 							
 							/*
-							 * Constructors that wouldn't normally be accessible (e.g.
-							 * private) need to be made accessible before they can be
-							 * invoked.
+							 * Constructors that wouldn't normally be
+							 * accessible (e.g. private) need to be made
+							 * accessible before they can be invoked.
 							 */
 							PARAMETERIZED.setAccessible(true);
 							
@@ -621,7 +767,9 @@ public class TypeToken<T>
 					(
 						new Object[ ]
 						{
-							RAW_TYPE, TYPE_ARGUMENTS.values( ).toArray( )
+							RAW_TYPE,
+							ENCLOSING_TYPE,
+							TYPE_ARGUMENTS.values( ).toArray( )
 						}
 					)
 				)
@@ -643,16 +791,26 @@ public class TypeToken<T>
 		{
 			final TypeToken<?> THAT_TYPE_TOKEN = (TypeToken<?>)THAT;
 			
-			return
-			(
-				RAW_TYPE.equals(THAT_TYPE_TOKEN.getRawType( )) &&
-				TYPE_ARGUMENTS.equals(THAT_TYPE_TOKEN.getAllTypeArguments( ))
-			);
+			if (RAW_TYPE.equals(THAT_TYPE_TOKEN.getRawType( )))
+			{
+				if (TYPE_ARGUMENTS.equals(THAT_TYPE_TOKEN.getAllTypeArguments( )))
+				{
+					if (ENCLOSING_TYPE == null)
+					{
+						if (THAT_TYPE_TOKEN.getEnclosingType( ) == null)
+						{
+							return true;
+						}
+					}
+					else if (ENCLOSING_TYPE.equals(THAT_TYPE_TOKEN.getEnclosingType( )))
+					{
+						return true;
+					}
+				}
+			}
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	}
 	
 	@Override
@@ -660,10 +818,14 @@ public class TypeToken<T>
 	{
 		if (toString == null)
 		{ // First time this method has been invoked on this instance.
-			final StringBuilder STRING_BUILDER =
-			(
-				new StringBuilder(RAW_TYPE.getSimpleName( ))
-			);
+			final StringBuilder STRING_BUILDER = new StringBuilder( );
+			
+			if (ENCLOSING_TYPE != null)
+			{
+				STRING_BUILDER.append(ENCLOSING_TYPE.toString( )).append('.');
+			}
+			
+			STRING_BUILDER.append(RAW_TYPE.getSimpleName( ));
 			
 			if (TYPE_ARGUMENTS.isEmpty( ) == false)
 			{ // Parameterized type.

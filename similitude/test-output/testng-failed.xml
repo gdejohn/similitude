@@ -5,7 +5,7 @@
     <classes>
       <class name="org.gdejohn.similitude.TypeTokenTest">
         <methods>
-          <include name="genericMethodReturnType"/>
+          <include name="genericEnclosingType"/>
         </methods>
       </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
     </classes>
