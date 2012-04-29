@@ -398,6 +398,30 @@ public class TypeTokenTest
 	}
 	
 	@Test
+	public static void superTypeToken( )
+	{
+		class Clazz<T> { }
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<Clazz<String>> token = new TypeToken<Clazz<String>>( ) { };
+			
+			assertEquals(token.getRawType( ), Clazz.class);
+			assertEquals(token.getTypeArgument(Clazz.class.getTypeParameters( )[0]).getRawType( ), String.class);
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
 	public static void genericEnclosingType( )
 	{
 		class Outer<O>
@@ -422,7 +446,7 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			String string = "xyzzy";
 			Outer<String> outer = new Outer<String>(string);
@@ -430,7 +454,7 @@ public class TypeTokenTest
 			
 			TypeToken<? extends Outer<String>.Inner> token = typeOf(inner);
 			TypeToken<?> enclosing = token.getEnclosingType( );
-			TypeToken<?> returnType = typeOf(Outer.Inner.class.getMethod("method").getGenericReturnType( ));
+			TypeToken<Outer<String>.Inner> returnType = new TypeToken<Outer<String>.Inner>( ) { };
 			
 			assertEquals(token.getRawType( ), Outer.Inner.class);
 			

@@ -39,6 +39,11 @@ public class TypeToken<T>
 		emptyMap( )
 	);
 	
+	private static final Map<Type, Object> NO_PARAMETERIZATIONS =
+	(
+		emptyMap( )
+	);
+	
 	private final Class<T> RAW_TYPE;
 	
 	private final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS;
@@ -58,6 +63,36 @@ public class TypeToken<T>
 		this.RAW_TYPE = RAW_TYPE;
 		this.TYPE_ARGUMENTS = TYPE_ARGUMENTS;
 		this.ENCLOSING_TYPE = ENCLOSING_TYPE;
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected TypeToken( )
+	{
+		final Type TYPE = this.getClass( ).getGenericSuperclass( );
+		
+		if (TYPE instanceof ParameterizedType)
+		{
+			final ParameterizedType PARAMETERIZED_TYPE =
+			(
+				(ParameterizedType)TYPE
+			);
+			
+			if (TypeToken.class.equals(PARAMETERIZED_TYPE.getRawType( )))
+			{
+				final TypeToken<?> TYPE_TOKEN =
+				(
+					typeOf(PARAMETERIZED_TYPE.getActualTypeArguments( )[0])
+				);
+				
+				this.RAW_TYPE = (Class<T>)TYPE_TOKEN.getRawType( );
+				this.TYPE_ARGUMENTS = TYPE_TOKEN.getAllTypeArguments( );
+				this.ENCLOSING_TYPE = TYPE_TOKEN.getEnclosingType( );
+				
+				return;
+			}
+		}
+		
+		throw new RuntimeException( );
 	}
 	
 	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS, final TypeToken<?> ENCLOSING_TYPE)
@@ -120,21 +155,12 @@ public class TypeToken<T>
 	
 	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		final Class<?> ENCLOSING_CLASS = CLASS.getEnclosingClass( );
+		final Type ENCLOSING_CLASS = CLASS.getEnclosingClass( );
 		
-		final TypeToken<?> ENCLOSING_TYPE;
-		
-		if (ENCLOSING_CLASS == null)
-		{
-			ENCLOSING_TYPE = null;
-		}
-		else
-		{
-			ENCLOSING_TYPE =
-			(
-				typeOf(ENCLOSING_CLASS, PARENT, PARAMETERIZATIONS)
-			);
-		}
+		final TypeToken<?> ENCLOSING_TYPE =
+		(
+			typeOf(ENCLOSING_CLASS, PARENT, PARAMETERIZATIONS)
+		);
 		
 		return typeOf(CLASS, PARENT, PARAMETERIZATIONS, ENCLOSING_TYPE);
 	}
@@ -427,6 +453,10 @@ public class TypeToken<T>
 			
 			throw new RuntimeException("Type variable not found.");
 		}
+		else if (TYPE instanceof Class)
+		{
+			throw new RuntimeException("Type variable not found.");
+		}
 		else
 		{
 			throw new RuntimeException("Subtype of type not recognized.");
@@ -435,13 +465,16 @@ public class TypeToken<T>
 	
 	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		try
+		if (PARENT != null)
 		{
-			return PARENT.getTypeArgument(TYPE_VARIABLE);
-		}
-		catch (final Exception e)
-		{
-			LOGGER.debug("Type argument not found in parent.");
+			try
+			{
+				return PARENT.getTypeArgument(TYPE_VARIABLE);
+			}
+			catch (final Exception e)
+			{
+				LOGGER.debug("Type argument not found in parent.");
+			}
 		}
 		
 		for (final Entry<Type, Object> ENTRY : PARAMETERIZATIONS.entrySet( ))
@@ -513,7 +546,7 @@ public class TypeToken<T>
 	
 	static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT)
 	{
-		return typeOf(TYPE, PARENT, null);
+		return typeOf(TYPE, PARENT, NO_PARAMETERIZATIONS);
 	}
 	
 	public static TypeToken<?> typeOf(final Type TYPE)
@@ -521,22 +554,22 @@ public class TypeToken<T>
 		return typeOf(TYPE, (TypeToken<?>)null);
 	}
 	
-	public Class<T> getRawType( )
+	public final Class<T> getRawType( )
 	{
 		return RAW_TYPE;
 	}
 	
-	public TypeToken<?> getEnclosingType( )
+	public final TypeToken<?> getEnclosingType( )
 	{
 		return ENCLOSING_TYPE;
 	}
 	
-	public Map<TypeVariable<?>, TypeToken<?>> getAllTypeArguments( )
+	public final Map<TypeVariable<?>, TypeToken<?>> getAllTypeArguments( )
 	{
 		return TYPE_ARGUMENTS;
 	}
 	
-	public TypeToken<?> getTypeArgument(final TypeVariable<?> TYPE_VARIABLE)
+	public final TypeToken<?> getTypeArgument(final TypeVariable<?> TYPE_VARIABLE)
 	{
 		if (TYPE_ARGUMENTS.containsKey(TYPE_VARIABLE))
 		{
@@ -548,7 +581,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	public TypeToken<?> getReturnType(final Method METHOD, final Object... ARGUMENTS)
+	public final TypeToken<?> getReturnType(final Method METHOD, final Object... ARGUMENTS)
 	{
 		final Class<?>[ ] PARAMETERS =
 		(
@@ -635,7 +668,7 @@ public class TypeToken<T>
 		return INSTANCE_FIELDS;
 	}
 	
-	public Set<Field> getAllInstanceFields( )
+	public final Set<Field> getAllInstanceFields( )
 	{
 		if (instanceFields == null)
 		{ // First time this method has been invoked on this instance.
@@ -650,7 +683,7 @@ public class TypeToken<T>
 		return instanceFields;
 	}
 	
-	public Set<Constructor<T>> getAccessibleConstructors( )
+	public final Set<Constructor<T>> getAccessibleConstructors( )
 	{
 		if (constructors == null)
 		{ // First time this method has been invoked on this instance.
@@ -755,7 +788,7 @@ public class TypeToken<T>
 	}
 	
 	@Override
-	public int hashCode( )
+	public final int hashCode( )
 	{
 		if (hashCode == null)
 		{ // First time this method has been invoked on this instance.
@@ -785,7 +818,7 @@ public class TypeToken<T>
 	}
 	
 	@Override
-	public boolean equals(final Object THAT)
+	public final boolean equals(final Object THAT)
 	{
 		if (THAT instanceof TypeToken)
 		{
@@ -814,7 +847,7 @@ public class TypeToken<T>
 	}
 	
 	@Override
-	public String toString( )
+	public final String toString( )
 	{
 		if (toString == null)
 		{ // First time this method has been invoked on this instance.
