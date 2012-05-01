@@ -6,6 +6,7 @@ import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.getProxyClass;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static java.util.Collections.unmodifiableMap;
+import static org.gdejohn.similitude.Cloner.BASIC_TYPES;
 import static org.gdejohn.similitude.TypeToken.typeOf;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -33,7 +34,7 @@ public final class Builder
 	 * Primitive types mapped to their respective wrapper types.
 	 */
 	@SuppressWarnings("serial")
-	static final Map<TypeToken<?>, TypeToken<?>> WRAPPERS =
+	private static final Map<TypeToken<?>, TypeToken<?>> WRAPPERS =
 	(
 		unmodifiableMap
 		(
@@ -98,13 +99,13 @@ public final class Builder
 	);
 	
 	/**
-	 * Gets the wrapper corresponding to the given primitive type.
+	 * Gets the wrapper for the given primitive type.
 	 * 
 	 * @param PRIMITIVE The primitive type for which to get the corresponding wrapper.
 	 * 
 	 * @return The wrapper corresponding to {@code PRIMITIVE}.
 	 */
-	private static <T> TypeToken<T>	wrap(final TypeToken<T> PRIMITIVE)
+	private static <T> TypeToken<T>	getWrapper(final TypeToken<T> PRIMITIVE)
 	{
 		/*
 		 * Mappings are only added to WRAPPERS if they would allow this cast to
@@ -135,8 +136,46 @@ public final class Builder
 	{ // Instance initializer, executes at the beginning of every constructor.
 		IMMUTABLE_DEFAULTS =
 		(
-			new LinkedHashMap<TypeToken<?>, Object>(Cloner.BASIC_TYPES)
+			new LinkedHashMap<TypeToken<?>, Object>(BASIC_TYPES)
 		);
+	}
+	
+	/**
+	 * @return A read-only view of {@code this} builder's immutable defaults.
+	 */
+	public Map<TypeToken<?>, Object> getAllDefaults( )
+	{
+		return unmodifiableMap(IMMUTABLE_DEFAULTS);
+	}
+	
+	public <T> boolean hasDefault(final TypeToken<T> TYPE)
+	{
+		return IMMUTABLE_DEFAULTS.containsKey(TYPE);
+	}
+
+	/**
+	 * Gets the default value for the given type.
+	 * 
+	 * The type must have been previously registered as immutable with {@link
+	 * #addDefault}, or {@code null} will be returned. Primitive types aren't
+	 * actually mapped. Instead, the default values of their corresponding
+	 * wrapper types are used.
+	 *
+	 * @param TYPE The type for which to get the default value.
+	 *
+	 * @return Default value associated with {@code TYPE}, or {@code null}.
+	 */
+	public <T> T getDefault(final TypeToken<T> TYPE)
+	{
+		final Class<T> CLASS = TYPE.getRawType( );
+		
+		LOGGER.debug
+		(
+			"Getting default value for type {}.",
+			CLASS.getSimpleName( )
+		);
+		
+		return CLASS.cast(IMMUTABLE_DEFAULTS.get(TYPE));
 	}
 	
 	/**
@@ -175,77 +214,44 @@ public final class Builder
 				)
 			);
 		}
+		else if (CLASS.isArray( ))
+		{
+			throw new IllegalArgumentException("Arrays are mutable.");
+		}
 		else
 		{
 			return IMMUTABLE_DEFAULTS.put(TYPE, VALUE);
 		}
 	}
-
-	/**
-	 * Gets the default value for the given type.
-	 * 
-	 * The type must have been previously registered as immutable with {@link
-	 * #addDefault}, or {@code null} will be returned. Primitive types aren't
-	 * actually mapped. Instead, the default values of their corresponding
-	 * wrapper types are used.
-	 *
-	 * @param TYPE The type for which to get the default value.
-	 *
-	 * @return Default value associated with {@code TYPE}, or {@code null}.
-	 */
-	public <T> T getDefault(final TypeToken<T> TYPE)
+	
+	public Object removeDefault(final TypeToken<?> TYPE)
 	{
-		final Class<T> CLASS = TYPE.getRawType( );
-		
-		LOGGER.debug
-		(
-			"Getting default value for type {}.",
-			CLASS.getSimpleName( )
-		);
-		
-		return CLASS.cast(IMMUTABLE_DEFAULTS.get(TYPE));
+		return IMMUTABLE_DEFAULTS.remove(TYPE);
 	}
 	
 	/**
-	 * Creates an array of the given type and length.
+	 * Resets immutable types to default values.
 	 * 
-	 * Each element is initialized to {@code null}.
+	 * After this method returns, any previous user-added immutable type
+	 * default values will have been removed, leaving {@code String} and the
+	 * primitive wrappers.
 	 * 
-	 * @param TYPE The type of the array to create (e.g. {@code String[ ]}).
-	 * @param DIMENSIONS The dimensions of the array to create.
-	 * 
-	 * @return An array of the given type and length.
-	 * 
-	 * @throws NullPointerException If {@code TYPE} is null, or doesn't represent an array type.
-	 * @throws NegativeArraySizeException If {@code LENGTH} is negative.
+	 * @return {@code true} if the immutable defaults are changed.
 	 */
-	public <T> T[ ] instantiateArray(final Class<? extends T[ ]> TYPE, final int... DIMENSIONS)
+	public boolean reset( )
 	{
+		final boolean CHANGED =
+		(
+			IMMUTABLE_DEFAULTS.keySet( ).retainAll(BASIC_TYPES.keySet( ))
+		);
+		
 		LOGGER.debug
 		(
-			"Instantiating array of type {} and dimensions: {}",
-			TYPE.getSimpleName( ),
-			DIMENSIONS
+			"Resetting immutable defaults: {}",
+			CHANGED ? "changed" : "unchanged"
 		);
 		
-		Class<?> componentType = TYPE;
-		
-		for (int index = 0; index < DIMENSIONS.length; index++)
-		{
-			componentType = componentType.getComponentType( );
-		}
-		
-		return
-		(
-			TYPE.cast
-			(
-				newInstance
-				(
-					componentType,
-					DIMENSIONS
-				)
-			)
-		);
+		return CHANGED;
 	}
 	
 	/**
@@ -279,9 +285,9 @@ public final class Builder
 			 * works because for any primitive type, P, and its wrapper, W,
 			 * P.class and W.class are both of type Class<W>.
 			 */
-			return getDefault(wrap(TYPE));
+			return getDefault(getWrapper(TYPE));
 		}
-		else if (IMMUTABLE_DEFAULTS.containsKey(TYPE))
+		else if (hasDefault(TYPE))
 		{ // Base case (previously added immutable type), return default value.
 			return getDefault(TYPE);
 		}
@@ -365,13 +371,14 @@ public final class Builder
 			(
 				new InstantiationFailedException
 				(
-					"Can't instantiate abstract class %s.",
+					new UnsupportedOperationException("Abstract class."),
+					"Can't instantiate class %s.",
 					CLASS.getSimpleName( )
 				)
 			);
 		}
 		else
-		{ // Class type, reflectively invoke each constructor until one works.
+		{ // Concrete class type, try constructors until one works.
 			LOGGER.debug
 			(
 				"Instantiating class type: {}", CLASS.getSimpleName( )
@@ -569,24 +576,5 @@ public final class Builder
 	public <T> T instantiate(final Class<T> CLASS)
 	{
 		return instantiate(typeOf(CLASS));
-	}
-	
-	public static class Foo<F>
-	{
-		public class Bar<E>
-		{
-			public Bar(E arg, F farg)
-			{
-				
-			}
-		}
-	}
-	
-	public static void main(String[ ] args)
-	{
-		String[][] s = new Builder( ).instantiateArray(String[][].class, 1, 1, 1);
-		System.out.println(java.util.Arrays.deepToString(s));
-		//System.out.println("Raw: " + java.util.Arrays.toString(Foo.Bar.class.getConstructors( )[0].getParameterTypes( )));
-		//System.out.println("Gen: " + java.util.Arrays.toString(Foo.Bar.class.getConstructors( )[0].getGenericParameterTypes( )));
 	}
 }

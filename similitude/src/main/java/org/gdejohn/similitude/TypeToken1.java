@@ -1065,4 +1065,20 @@ public class TypeToken1<E>
 		//System.out.println(getTypeOf(TypeToken1.class.getDeclaredMethod("foo").getGenericReturnType( ), null));
 		//System.out.println(getTypeOf(Test.class.getConstructors( )[0].getGenericParameterTypes( )[0], null));
 	}
+	
+	/*
+	
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS)
+	{
+		LOGGER.debug
+		(
+			"Getting type of class \"{}\" with type arguments \"{}\"",
+			CLASS.getSimpleName( ),
+			TYPE_ARGUMENTS
+		);
+		
+		return typeOf(CLASS, TYPE_ARGUMENTS, null);
+	}
+	
+	*/
 }

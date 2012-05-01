@@ -48,7 +48,7 @@
               <ul>
                 <li>
                   <a href="#" class="navigator-link " panel-name="test-xml-Default_suite">
-                    <span>C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--824146007\testng-customsuite.xml</span>
+                    <span>C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--1203126109\testng-customsuite.xml</span>
                   </a> <!-- navigator-link  -->
                 </li>
                 <li>
@@ -90,7 +90,7 @@
               <div class="suite-section-content">
                 <ul>
                   <li>
-                    <span class="method-stats">11 methods,   11 passed</span>
+                    <span class="method-stats">13 methods,   13 passed</span>
                   </li>
                   <li>
                     <span class="method-list-title passed">Passed methods</span>
@@ -99,6 +99,11 @@
                       <a href="#" panel-name="suite-Default_suite" class="show-methods passed suite-Default_suite"> (show)</a> <!-- show-methods passed suite-Default_suite -->
                     </span>
                     <div class="method-list-content passed suite-Default_suite">
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.TypeTokenTest" hash-for-method="genericArrayType">genericArrayType</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
                       <span>
                         <img width="3%" src="passed.png"/>
                         <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.TypeTokenTest" hash-for-method="genericEnclosingType">genericEnclosingType</a> <!-- method navigator-link -->
@@ -154,6 +159,11 @@
                         <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.TypeTokenTest" hash-for-method="superTypeToken">superTypeToken</a> <!-- method navigator-link -->
                       </span>
                       <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.TypeTokenTest" hash-for-method="wildcardType">wildcardType</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
                     </div> <!-- method-list-content passed suite-Default_suite -->
                   </li>
                 </ul>
@@ -172,6 +182,13 @@
               <span class="class-name">org.gdejohn.similitude.TypeTokenTest</span>
             </div> <!-- main-panel-header rounded-window-top -->
             <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="genericArrayType">
+                  </a> <!-- genericArrayType -->
+                  <span class="method-name">genericArrayType</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
               <div class="method">
                 <div class="method-content">
                   <a name="genericEnclosingType">
@@ -249,12 +266,19 @@
                   <span class="method-name">superTypeToken</span>
                 </div> <!-- method-content -->
               </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="wildcardType">
+                  </a> <!-- wildcardType -->
+                  <span class="method-name">wildcardType</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
             </div> <!-- main-panel-content rounded-window-bottom -->
           </div> <!-- suite-Default_suite-class-passed -->
         </div> <!-- panel Default_suite -->
         <div panel-name="test-xml-Default_suite" class="panel">
           <div class="main-panel-header rounded-window-top">
-            <span class="header-content">C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--824146007\testng-customsuite.xml</span>
+            <span class="header-content">C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--1203126109\testng-customsuite.xml</span>
           </div> <!-- main-panel-header rounded-window-top -->
           <div class="main-panel-content rounded-window-bottom">
             <pre>
@@ -303,56 +327,64 @@ data.addColumn('number', 'Number');
 data.addColumn('string', 'Method');
 data.addColumn('string', 'Class');
 data.addColumn('number', 'Time (ms)');
-data.addRows(11);
+data.addRows(13);
 data.setCell(0, 0, 0)
-data.setCell(0, 1, 'genericEnclosingType')
+data.setCell(0, 1, 'genericArrayType')
 data.setCell(0, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(0, 3, 24);
+data.setCell(0, 3, 30);
 data.setCell(1, 0, 1)
-data.setCell(1, 1, 'superTypeToken')
+data.setCell(1, 1, 'genericEnclosingType')
 data.setCell(1, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(1, 3, 12);
+data.setCell(1, 3, 10);
 data.setCell(2, 0, 2)
-data.setCell(2, 1, 'genericMethodReturnType')
+data.setCell(2, 1, 'superTypeToken')
 data.setCell(2, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(2, 3, 8);
+data.setCell(2, 3, 10);
 data.setCell(3, 0, 3)
-data.setCell(3, 1, 'instanceOfTopLevelGenericType')
+data.setCell(3, 1, 'nonGenericType')
 data.setCell(3, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(3, 3, 5);
+data.setCell(3, 3, 10);
 data.setCell(4, 0, 4)
-data.setCell(4, 1, 'parameterizedType')
+data.setCell(4, 1, 'nonGenericObject')
 data.setCell(4, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(4, 3, 4);
+data.setCell(4, 3, 0);
 data.setCell(5, 0, 5)
-data.setCell(5, 1, 'inheritedFields')
+data.setCell(5, 1, 'parameterizedType')
 data.setCell(5, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(5, 3, 3);
+data.setCell(5, 3, 0);
 data.setCell(6, 0, 6)
 data.setCell(6, 1, 'privateConstructor')
 data.setCell(6, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(6, 3, 2);
+data.setCell(6, 3, 0);
 data.setCell(7, 0, 7)
-data.setCell(7, 1, 'nonGenericType')
+data.setCell(7, 1, 'instanceOfTopLevelGenericType')
 data.setCell(7, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(7, 3, 2);
+data.setCell(7, 3, 0);
 data.setCell(8, 0, 8)
-data.setCell(8, 1, 'nonGenericEquality')
+data.setCell(8, 1, 'nonGenericTypeToString')
 data.setCell(8, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(8, 3, 2);
+data.setCell(8, 3, 0);
 data.setCell(9, 0, 9)
-data.setCell(9, 1, 'nonGenericTypeToString')
+data.setCell(9, 1, 'nonGenericEquality')
 data.setCell(9, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(9, 3, 1);
+data.setCell(9, 3, 0);
 data.setCell(10, 0, 10)
-data.setCell(10, 1, 'nonGenericObject')
+data.setCell(10, 1, 'inheritedFields')
 data.setCell(10, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(10, 3, 1);
+data.setCell(10, 3, 0);
+data.setCell(11, 0, 11)
+data.setCell(11, 1, 'genericMethodReturnType')
+data.setCell(11, 2, 'org.gdejohn.similitude.TypeTokenTest')
+data.setCell(11, 3, 0);
+data.setCell(12, 0, 12)
+data.setCell(12, 1, 'wildcardType')
+data.setCell(12, 2, 'org.gdejohn.similitude.TypeTokenTest')
+data.setCell(12, 3, 0);
 window.suiteTableData['Default_suite']= { tableData: data, tableDiv: 'times-div-Default_suite'}
 return data;
 }
               </script>
-              <span class="suite-total-time">Total running time: 64 ms</span>
+              <span class="suite-total-time">Total running time: 60 ms</span>
               <div id="times-div-Default_suite">
               </div> <!-- times-div-Default_suite -->
             </div> <!-- times-div -->
@@ -380,48 +412,56 @@ return data;
             <div class="chronological-class">
               <div class="chronological-class-name">org.gdejohn.similitude.TypeTokenTest</div> <!-- chronological-class-name -->
               <div class="test-method">
-                <span class="method-name">genericEnclosingType</span>
+                <span class="method-name">genericArrayType</span>
                 <span class="method-start">0 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
+                <span class="method-name">genericEnclosingType</span>
+                <span class="method-start">30 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
                 <span class="method-name">genericMethodReturnType</span>
-                <span class="method-start">25 ms</span>
+                <span class="method-start">40 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
                 <span class="method-name">inheritedFields</span>
-                <span class="method-start">34 ms</span>
+                <span class="method-start">50 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
                 <span class="method-name">instanceOfTopLevelGenericType</span>
-                <span class="method-start">38 ms</span>
+                <span class="method-start">50 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
                 <span class="method-name">nonGenericEquality</span>
-                <span class="method-start">44 ms</span>
-              </div> <!-- test-method -->
-              <div class="test-method">
-                <span class="method-name">nonGenericObject</span>
-                <span class="method-start">47 ms</span>
-              </div> <!-- test-method -->
-              <div class="test-method">
-                <span class="method-name">nonGenericType</span>
-                <span class="method-start">48 ms</span>
-              </div> <!-- test-method -->
-              <div class="test-method">
-                <span class="method-name">nonGenericTypeToString</span>
-                <span class="method-start">53 ms</span>
-              </div> <!-- test-method -->
-              <div class="test-method">
-                <span class="method-name">parameterizedType</span>
-                <span class="method-start">55 ms</span>
-              </div> <!-- test-method -->
-              <div class="test-method">
-                <span class="method-name">privateConstructor</span>
                 <span class="method-start">60 ms</span>
               </div> <!-- test-method -->
               <div class="test-method">
+                <span class="method-name">nonGenericObject</span>
+                <span class="method-start">60 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">nonGenericType</span>
+                <span class="method-start">60 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">nonGenericTypeToString</span>
+                <span class="method-start">80 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">parameterizedType</span>
+                <span class="method-start">80 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">privateConstructor</span>
+                <span class="method-start">80 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
                 <span class="method-name">superTypeToken</span>
-                <span class="method-start">63 ms</span>
+                <span class="method-start">80 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">wildcardType</span>
+                <span class="method-start">90 ms</span>
               </div> <!-- test-method -->
           </div> <!-- main-panel-content rounded-window-bottom -->
         </div> <!-- panel -->

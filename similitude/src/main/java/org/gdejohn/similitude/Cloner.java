@@ -14,6 +14,7 @@ import static java.lang.reflect.Array.getLength;
 import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Array.set;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
 import static org.gdejohn.similitude.TypeToken.typeOf;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -40,7 +41,7 @@ public final class Cloner
 	 * Wrapper types and {@code String} mapped to default values.
 	 * 
 	 * Wrapper types are mapped to the default values of their respective
-	 * primitive types as per <a href="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.12.5">JLS 4.12.5</a>,
+	 * primitive types as per <a href="http://docs.oracle.com/javase/specs/jls/se5.0/html/typesValues.html#4.12.5">JLS 4.12.5</a>,
 	 * and {@code String} is mapped to the empty string. Primitives types
 	 * aren't included here because they're autoboxed during cloning.
 	 */
@@ -75,105 +76,127 @@ public final class Cloner
 		)
 	);
 	
-	@SuppressWarnings("unused")
-	private final boolean DETERMINE_IMMUTABLE;
-	
 	/**
 	 * Instantiates types that need to be deep-copied.
 	 */
-	final Builder BUILDER = new Builder( );
+	private final Builder BUILDER = new Builder( );
 	
 	/**
 	 * Immutable types, can be shallow-copied.
 	 */
-	private final Set<TypeToken<?>> IMMUTABLE;
+	private final Set<TypeToken<?>> IMMUTABLE_TYPES;
 	
 	/**
 	 * Initializes all instance variables.
 	 * 
-	 * @param KNOWN_IMMUTABLE_TYPES Types known to be immutable, which can therefore be safely shallow-copied.
-	 * @param DETERMINE_IMMUTABLE Whether the resulting instance should attempt to reflectively determine immutability during cloning.
+	 * @param IMMUTABLE_TYPES Types which can be safely shallow-copied.
 	 */
-	private Cloner(final Set<TypeToken<?>> KNOWN_IMMUTABLE_TYPES, final boolean DETERMINE_IMMUTABLE)
+	private Cloner(final Set<TypeToken<?>> IMMUTABLE_TYPES)
 	{
-		IMMUTABLE = new LinkedHashSet<TypeToken<?>>(KNOWN_IMMUTABLE_TYPES);
-		
-		this.DETERMINE_IMMUTABLE = DETERMINE_IMMUTABLE;
+		this.IMMUTABLE_TYPES =
+		(
+			new LinkedHashSet<TypeToken<?>>(IMMUTABLE_TYPES)
+		);
 	}
 	
 	/**
 	 * Default constructor.
 	 * 
-	 * Immutable types are initialized to {@link #BASIC_TYPES}. The resulting
-	 * instance will not attempt to reflectively determine immutability during
-	 * cloning.
+	 * Immutable types are initialized to {@link #BASIC_TYPES}.
 	 */
 	public Cloner( )
 	{
-		this(BASIC_TYPES.keySet( ), false);
+		this(BASIC_TYPES.keySet( ));
 	}
 	
 	/**
-	 * Creates a new cloner that will attempt to determine immutablity.
-	 * 
-	 * The resulting cloner has the same registered immutable types as
-	 * {@code this} cloner.
-	 * 
-	 * @return A new cloner that will attempt to reflectively determine immutablity.
+	 * @return {@code this} cloner's builder.
 	 */
-	public Cloner determineImmutable( )
+	public Builder getBuilder( )
 	{
-		return new Cloner(IMMUTABLE, true);
+		return BUILDER;
 	}
 	
 	/**
-	 * Registers the given class as immutable, for shallow copying.
+	 * @return A read-only view of {@code this} cloner's immutable types.
+	 */
+	public Set<TypeToken<?>> getImmutableTypes( )
+	{
+		return unmodifiableSet(IMMUTABLE_TYPES);
+	}
+	
+	public boolean isImmutable(final TypeToken<?> TYPE)
+	{
+		return IMMUTABLE_TYPES.contains(TYPE);
+	}
+	
+	/**
+	 * Registers the given type as immutable, for shallow copying.
 	 * 
 	 * @param TYPE The type to register as immutable.
 	 * 
-	 * @return {@code true} if {@code CLASS} wasn't already registered.
+	 * @return {@code true} if {@code TYPE} wasn't already registered.
 	 */
 	public boolean register(final TypeToken<?> TYPE)
 	{
-		final boolean CHANGED = IMMUTABLE.add(TYPE);
+		final Class<?> CLASS = TYPE.getRawType( );
 		
-		LOGGER.debug
-		(
-			"Registering class {} as immutable: {}",
-			TYPE.getRawType( ).getSimpleName( ),
-			CHANGED ? "changed" : "unchanged"
-		);
-		
-		return CHANGED;
-	}
-	
-	/**
-	 * Registers the given class as immutable and maps it to the given value.
-	 * 
-	 * When this instance of {@code Cloner} needs an instance of the given
-	 * class, it uses the given value instead of creating a new instance.
-	 * The class must be immutable, or any resulting clone that relies on the
-	 * class isn't guaranteed to be a true deep copy.
-	 * 
-	 * @param TYPE The type to register as immutable.
-	 * @param VALUE The value to map {@code CLASS} to.
-	 * 
-	 * @return {@code true} if {@code CLASS} wasn't already registered.
-	 * 
-	 * @throws IllegalArgumentException If {@code CLASS} is an array type.
-	 */
-	public <T, U extends T> boolean register(final TypeToken<T> TYPE, final U VALUE)
-	{
-		if (TYPE.getRawType( ).isArray( ))
+		if (CLASS.isPrimitive( ))
 		{
-			throw new IllegalArgumentException("Arrays aren't immutable.");
+			throw
+			(
+				new IllegalArgumentException
+				(
+					"Can't map primitive type. Use its wrapper."
+				)
+			);
+		}
+		else if (CLASS.isArray( ))
+		{
+			throw new IllegalArgumentException("Arrays are mutable.");
 		}
 		else
 		{
-			BUILDER.addDefault(TYPE, VALUE);
+			final boolean CHANGED = IMMUTABLE_TYPES.add(TYPE);
 			
-			return register(TYPE);
+			LOGGER.debug
+			(
+				"Registering class {} as immutable: {}",
+				TYPE.getRawType( ).getSimpleName( ),
+				CHANGED ? "changed" : "unchanged"
+			);
+			
+			return CHANGED;
 		}
+	}
+	
+	/**
+	 * Registers the given type as immutable and maps it to the given value.
+	 * 
+	 * When this instance of {@code Cloner} needs an instance of the given
+	 * type, it uses the given value instead of creating a new instance.
+	 * The type must be immutable, or any resulting clone that relies on it
+	 * isn't guaranteed to be a true deep copy.
+	 * 
+	 * @param TYPE The type to register as immutable.
+	 * @param VALUE The value to map {@code TYPE} to.
+	 * 
+	 * @return {@code true} if {@code TYPE} wasn't already registered.
+	 * 
+	 * @throws IllegalArgumentException If {@code TYPE} is an array type.
+	 */
+	public <T, U extends T> boolean register(final TypeToken<T> TYPE, final U VALUE)
+	{
+		BUILDER.addDefault(TYPE, VALUE);
+		
+		return IMMUTABLE_TYPES.add(TYPE);
+	}
+	
+	public boolean unregister(final TypeToken<?> TYPE)
+	{
+		BUILDER.removeDefault(TYPE);
+		
+		return IMMUTABLE_TYPES.remove(TYPE);
 	}
 	
 	/**
@@ -187,11 +210,16 @@ public final class Cloner
 	 */
 	public boolean reset( )
 	{
-		final boolean CHANGED = IMMUTABLE.retainAll(BASIC_TYPES.keySet( ));
+		BUILDER.reset( );
+		
+		final boolean CHANGED =
+		(
+			IMMUTABLE_TYPES.retainAll(BASIC_TYPES.keySet( ))
+		);
 		
 		LOGGER.debug
 		(
-			"Resetting immutable classes: {}",
+			"Resetting immutable types: {}",
 			CHANGED ? "changed" : "unchanged"
 		);
 		
@@ -209,6 +237,8 @@ public final class Cloner
 	 * Overriding implementations of {@link java.lang.Object#equals(Object)}
 	 * and {@link java.lang.Object#hashCode()} are ignored. Rather, identity is
 	 * used.
+	 * 
+	 * @see IdentityHashMap
 	 */
 	private IdentityHashMap<Object, Object> CLONES =
 	(
@@ -236,41 +266,42 @@ public final class Cloner
 	 */
 	private <T> T toClone(final T ORIGINAL, final T INSTANCE)
 	{
-		final T CLONE;
-		
 		if (ORIGINAL == null)
 		{
-			CLONE = null;
-			
 			LOGGER.debug("Original object is null.");
+			
+			return null;
+		}
+		
+		final TypeToken<? extends T> TYPE = typeOf(ORIGINAL);
+		
+		final Class<? extends T> CLASS = TYPE.getRawType( );
+		
+		if (CLASS.isEnum( ) || isImmutable(TYPE))
+		{ // Base case, safe to shallow-copy.
+			LOGGER.debug
+			(
+				"Shallow-copying value of type {}: \"{}\"",
+				CLASS.getSimpleName( ),
+				ORIGINAL
+			);
+			
+			return ORIGINAL;
+		}
+		else if (CLONES.containsKey(ORIGINAL))
+		{
+			LOGGER.debug
+			(
+				"Already cloned, reusing reference to clone."
+			);
+			
+			return CLASS.cast(CLONES.get(ORIGINAL));
 		}
 		else
 		{
-			final TypeToken<? extends T> TYPE = typeOf(ORIGINAL); // new TypeToken2<Object>(CLASS, DETERMINE_IMMUTABLE);
+			final T CLONE;
 			
-			final Class<? extends T> CLASS = TYPE.getRawType( );
-			
-			if (CLASS.isEnum( ) || IMMUTABLE.contains(TYPE))
-			{ // Base case, safe to shallow-copy.
-				CLONE = ORIGINAL;
-				
-				LOGGER.debug
-				(
-					"Shallow-copying value of type {}: \"{}\"",
-					CLASS.getSimpleName( ),
-					ORIGINAL
-				);
-			}
-			else if (CLONES.containsKey(ORIGINAL))
-			{
-				LOGGER.debug
-				(
-					"Already cloned, reusing reference to clone."
-				);
-				
-				CLONE = CLASS.cast(CLONES.get(ORIGINAL));
-			}
-			else if (CLASS.isArray( ))
+			if (CLASS.isArray( ))
 			{ // Recursively clone each element into new array.
 				final int LENGTH = getLength(ORIGINAL);
 				
@@ -385,12 +416,12 @@ public final class Cloner
 					{
 						FIELD.setAccessible(true);
 						
-						final Object CLONE_FIELD =
+						final Object VALUE =
 						(
 							toClone(FIELD.get(ORIGINAL), FIELD.get(CLONE))
 						);
 						
-						FIELD.set(CLONE, CLONE_FIELD);
+						FIELD.set(CLONE, VALUE);
 						
 						LOGGER.debug
 						(
@@ -438,9 +469,9 @@ public final class Cloner
 					}
 				}
 			}
+			
+			return CLONE;
 		}
-		
-		return CLONE;
 	}
 	
 	/**

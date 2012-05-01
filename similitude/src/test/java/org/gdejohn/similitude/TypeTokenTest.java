@@ -16,6 +16,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.testng.annotations.Test;
@@ -36,7 +37,7 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public void nonGenericType( )
+	public static void nonGenericType( )
 	{
 		try
 		{
@@ -57,7 +58,7 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public void nonGenericTypeToString( )
+	public static void nonGenericTypeToString( )
 	{
 		try
 		{
@@ -80,7 +81,7 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public void nonGenericObject( )
+	public static void nonGenericObject( )
 	{
 		try
 		{
@@ -103,7 +104,7 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public void nonGenericEquality( )
+	public static void nonGenericEquality( )
 	{
 		try
 		{
@@ -163,94 +164,6 @@ public class TypeTokenTest
 			Set<Field> actual = token.getAllInstanceFields( );
 			
 			assertEquals(actual, expected);
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
-	}
-	
-	@Test
-	public static void instanceOfTopLevelGenericType( )
-	{
-		class Zeroth<Z>
-		{
-			@SuppressWarnings("unused")
-			private Z field;
-			
-			Zeroth(Z arg)
-			{
-				field = arg;
-			}
-		}
-		
-		class First<F>
-		{
-			@SuppressWarnings("unused")
-			private Zeroth<F> field;
-			
-			First(F arg)
-			{
-				field = new Zeroth<F>(arg);
-			}
-		}
-		
-		class Second<S>
-		{
-			@SuppressWarnings("unused")
-			private S field;
-			
-			Second(S arg)
-			{
-				field = arg;
-			}
-		}
-		
-		class Third<T>
-		{
-			@SuppressWarnings("unused")
-			private T field;
-			
-			Third(T arg)
-			{
-				field = arg;
-			}
-		}
-		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			String string = "xyzzy";
-			
-			Third<String> third = new Third<String>(string);
-			Second<Third<String>> second = new Second<Third<String>>(third);
-			First<Second<Third<String>>> first = new First<Second<Third<String>>>(second);
-			
-			TypeToken<? extends First<Second<Third<String>>>> firstToken = typeOf(first);
-			
-			TypeToken<?> secondToken = firstToken.getTypeArgument(First.class.getTypeParameters( )[0]);
-			TypeToken<?> thirdToken = secondToken.getTypeArgument(Second.class.getTypeParameters( )[0]);
-			TypeToken<?> stringToken = thirdToken.getTypeArgument(Third.class.getTypeParameters( )[0]);
-			
-			assertEquals(firstToken.getRawType( ), first.getClass( ));
-			assertEquals(firstToken.toString( ), "First<Second<Third<String>>>");
-			
-			assertEquals(secondToken.getRawType( ), second.getClass( ));
-			assertEquals(secondToken.toString( ), "Second<Third<String>>");
-			assertEquals(secondToken, typeOf(second));
-
-			assertEquals(thirdToken.getRawType( ), third.getClass( ));
-			assertEquals(thirdToken.toString( ), "Third<String>");
-			assertEquals(thirdToken, typeOf(third));
-
-			assertEquals(stringToken.getRawType( ), string.getClass( ));
-			assertEquals(stringToken.toString( ), "String");
-			assertEquals(stringToken, typeOf(string));
 		}
 		catch (Exception e)
 		{
@@ -343,6 +256,177 @@ public class TypeTokenTest
 	}
 	
 	@Test
+	public static void genericArrayType( )
+	{
+		class Foo<F>
+		{
+			@SuppressWarnings("unused")
+			Foo(F[ ] arg)
+			{
+				
+			}
+		}
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<Foo<String>> parent = new TypeToken<Foo<String>>( ) { };
+			TypeToken<?> token = typeOf(Foo.class.getDeclaredConstructors( )[0].getGenericParameterTypes( )[0], parent);
+			
+			assertEquals(token.getRawType( ), String[ ].class);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void wildcardType( )
+	{
+		class Foo<F> { }
+		
+		class Bar<B>
+		{
+			@SuppressWarnings("unused")
+			Bar(Foo<? extends B> arg)
+			{
+				
+			}
+		}
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<Bar<String>> parent = new TypeToken<Bar<String>>( ) { };
+			TypeToken<?> token = typeOf(Bar.class.getDeclaredConstructors( )[0].getGenericParameterTypes( )[0], parent);
+			
+			assertEquals(token.getRawType( ), Foo.class);
+			assertEquals(token.getTypeArgument(Foo.class.getTypeParameters( )[0]).getRawType( ), String.class);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void superTypeToken( )
+	{
+		try
+		{
+			// ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<Map<Integer, Set<? extends char[ ]>>> token = new TypeToken<Map<Integer, Set<? extends char[ ]>>>( ) { };
+			TypeToken<?> valueType = token.getTypeArgument(Map.class.getTypeParameters( )[1]);
+			
+			assertEquals(token.toString( ), "Map<Integer,Set<char[]>>");
+			assertEquals(token.getRawType( ), Map.class);
+			assertEquals(token.getTypeArgument(Map.class.getTypeParameters( )[0]).getRawType( ), Integer.class);
+			assertEquals(valueType.getRawType( ), Set.class);
+			assertEquals(valueType.getTypeArgument(Set.class.getTypeParameters( )[0]).getRawType( ), char[ ].class);
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void instanceOfTopLevelGenericType( )
+	{
+		class Zeroth<Z>
+		{
+			@SuppressWarnings("unused")
+			private Z field;
+			
+			Zeroth(Z arg)
+			{
+				field = arg;
+			}
+		}
+		
+		class First<F>
+		{
+			@SuppressWarnings("unused")
+			private Zeroth<? extends F> field;
+			
+			First(F arg)
+			{
+				field = new Zeroth<F>(arg);
+			}
+		}
+		
+		class Second<S>
+		{
+			@SuppressWarnings("unused")
+			private S field;
+			
+			Second(S arg)
+			{
+				field = arg;
+			}
+		}
+		
+		class Third<T>
+		{
+			@SuppressWarnings("unused")
+			private T field;
+			
+			Third(T arg)
+			{
+				field = arg;
+			}
+		}
+		
+		try
+		{
+			// ROOT_LOGGER.setLevel(DEBUG);
+			
+			String string = "xyzzy";
+			
+			Third<String> third = new Third<String>(string);
+			Second<Third<String>> second = new Second<Third<String>>(third);
+			First<Second<Third<String>>> first = new First<Second<Third<String>>>(second);
+			
+			TypeToken<? extends First<Second<Third<String>>>> firstToken = typeOf(first);
+			
+			TypeToken<?> secondToken = firstToken.getTypeArgument(First.class.getTypeParameters( )[0]);
+			TypeToken<?> thirdToken = secondToken.getTypeArgument(Second.class.getTypeParameters( )[0]);
+			TypeToken<?> stringToken = thirdToken.getTypeArgument(Third.class.getTypeParameters( )[0]);
+			
+			assertEquals(firstToken.getRawType( ), first.getClass( ));
+			assertEquals(firstToken.toString( ), "First<Second<Third<String>>>");
+			
+			assertEquals(secondToken.getRawType( ), second.getClass( ));
+			assertEquals(secondToken.toString( ), "Second<Third<String>>");
+			assertEquals(secondToken, typeOf(second));
+
+			assertEquals(thirdToken.getRawType( ), third.getClass( ));
+			assertEquals(thirdToken.toString( ), "Third<String>");
+			assertEquals(thirdToken, typeOf(third));
+
+			assertEquals(stringToken.getRawType( ), string.getClass( ));
+			assertEquals(stringToken.toString( ), "String");
+			assertEquals(stringToken, typeOf(string));
+		}
+		catch (Exception e)
+		{
+			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
 	public static void genericMethodReturnType( )
 	{
 		class Parameter<P>
@@ -386,30 +470,6 @@ public class TypeTokenTest
 			assertEquals(returnType.getRawType( ), ReturnType.class);
 			assertEquals(returnType.getTypeArgument(ReturnType.class.getTypeParameters( )[0]).getRawType( ), Integer.class);
 			assertEquals(returnType.getTypeArgument(ReturnType.class.getTypeParameters( )[1]).getRawType( ), String.class);
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
-	}
-	
-	@Test
-	public static void superTypeToken( )
-	{
-		class Clazz<T> { }
-		
-		try
-		{
-			ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<Clazz<String>> token = new TypeToken<Clazz<String>>( ) { };
-			
-			assertEquals(token.getRawType( ), Clazz.class);
-			assertEquals(token.getTypeArgument(Clazz.class.getTypeParameters( )[0]).getRawType( ), String.class);
 		}
 		catch (Exception e)
 		{

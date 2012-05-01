@@ -116,7 +116,7 @@ public class ClonerTest
 			ROOT_LOGGER.setLevel(DEBUG);
 			
 			String s = "xyzzy";
-			assertEquals(typeOf(new Enclosing<String>(s).new Nested( ).new DoubleNested( )).toString( ), "ClonerTest.Enclosing<String>.Nested.DoubleNested");
+			assertEquals(typeOf(new Enclosing<String>(s).new Nested( ).new DoubleNested( )).toString( ), "Enclosing<String>.Nested.DoubleNested");
 		}
 		catch (Exception e)
 		{
@@ -514,9 +514,9 @@ public class ClonerTest
 		try
 		{
 			Cloner cloner = new Cloner( );
-			Builder builder = cloner.BUILDER;
+			Builder builder = cloner.getBuilder( );
 			
-			//ROOT_LOGGER.setLevel(DEBUG);
+			ROOT_LOGGER.setLevel(DEBUG);
 			
 			assertFalse(cloner.reset( ));
 			assertFalse(cloner.register(typeOf(String.class)));
@@ -556,7 +556,7 @@ public class ClonerTest
 		public final int intField = 0;
 	}
 	
-	//@Test
+	/*@Test
 	public void testDetermineImmutable( )
 	{
 		try
@@ -583,7 +583,7 @@ public class ClonerTest
 		{
 			ROOT_LOGGER.setLevel(WARN);
 		}
-	}
+	}*/
 	
 	static class Superclass2
 	{

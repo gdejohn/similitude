@@ -1,5 +1,6 @@
 package org.gdejohn.similitude;
 
+import static java.lang.Class.forName;
 import static java.lang.Integer.valueOf;
 import static java.lang.Math.nextUp;
 import static java.lang.reflect.Modifier.isPublic;
@@ -39,10 +40,7 @@ public class TypeToken<T>
 		emptyMap( )
 	);
 	
-	private static final Map<Type, Object> NO_PARAMETERIZATIONS =
-	(
-		emptyMap( )
-	);
+	private static final Map<Type, Object> NO_PARAMETERIZATIONS = emptyMap( );
 	
 	private final Class<T> RAW_TYPE;
 	
@@ -57,13 +55,6 @@ public class TypeToken<T>
 	private Integer hashCode = null;
 	
 	private String toString = null;
-	
-	private TypeToken(final Class<T> RAW_TYPE, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS, final TypeToken<?> ENCLOSING_TYPE)
-	{
-		this.RAW_TYPE = RAW_TYPE;
-		this.TYPE_ARGUMENTS = TYPE_ARGUMENTS;
-		this.ENCLOSING_TYPE = ENCLOSING_TYPE;
-	}
 	
 	@SuppressWarnings("unchecked")
 	protected TypeToken( )
@@ -95,6 +86,13 @@ public class TypeToken<T>
 		throw new RuntimeException( );
 	}
 	
+	private TypeToken(final Class<T> RAW_TYPE, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS, final TypeToken<?> ENCLOSING_TYPE)
+	{
+		this.RAW_TYPE = RAW_TYPE;
+		this.TYPE_ARGUMENTS = TYPE_ARGUMENTS;
+		this.ENCLOSING_TYPE = ENCLOSING_TYPE;
+	}
+	
 	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS, final TypeToken<?> ENCLOSING_TYPE)
 	{
 		LOGGER.debug
@@ -105,18 +103,6 @@ public class TypeToken<T>
 		);
 		
 		return new TypeToken<T>(CLASS, TYPE_ARGUMENTS, ENCLOSING_TYPE);
-	}
-	
-	static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS)
-	{
-		LOGGER.debug
-		(
-			"Getting type of class \"{}\" with type arguments \"{}\"",
-			CLASS.getSimpleName( ),
-			TYPE_ARGUMENTS
-		);
-		
-		return typeOf(CLASS, TYPE_ARGUMENTS, null);
 	}
 	
 	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE)
@@ -155,12 +141,19 @@ public class TypeToken<T>
 	
 	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		final Type ENCLOSING_CLASS = CLASS.getEnclosingClass( );
+		final TypeToken<?> ENCLOSING_TYPE;
 		
-		final TypeToken<?> ENCLOSING_TYPE =
-		(
-			typeOf(ENCLOSING_CLASS, PARENT, PARAMETERIZATIONS)
-		);
+		if (CLASS.isMemberClass( ) && isStatic(CLASS.getModifiers( )) == false)
+		{
+			ENCLOSING_TYPE =
+			(
+				typeOf(CLASS.getEnclosingClass( ), PARENT, PARAMETERIZATIONS)
+			);
+		}
+		else
+		{
+			ENCLOSING_TYPE = null;
+		}
 		
 		return typeOf(CLASS, PARENT, PARAMETERIZATIONS, ENCLOSING_TYPE);
 	}
@@ -173,7 +166,7 @@ public class TypeToken<T>
 		}
 		else
 		{
-			return typeOf(CLASS, PARENT, null);
+			return typeOf(CLASS, PARENT, NO_PARAMETERIZATIONS);
 		}
 	}
 	
@@ -239,74 +232,152 @@ public class TypeToken<T>
 			}
 		}
 		
-		if (RAW_TYPE.isMemberClass( ) && isStatic(RAW_TYPE.getModifiers( )) == false)
+		if (RAW_TYPE.isMemberClass( ))
 		{
-			final Class<?> ENCLOSING_CLASS = RAW_TYPE.getEnclosingClass( );
-			
-			for (final Field FIELD : INSTANCE_FIELDS)
+			if (isStatic(RAW_TYPE.getModifiers( )) == false)
 			{
-				if (FIELD.isSynthetic( ))
+				final Class<?> ENCLOSING_CLASS = RAW_TYPE.getEnclosingClass( );
+				
+				for (final Field FIELD : INSTANCE_FIELDS)
 				{
-					if (ENCLOSING_CLASS.equals(FIELD.getType( )))
+					if (FIELD.isSynthetic( ))
 					{
-						if (FIELD.getName( ).matches("^this\\$\\d++$"))
+						if (ENCLOSING_CLASS.equals(FIELD.getType( )))
 						{
-							try
-							{
-								final Object VALUE = FIELD.get(OBJECT);
-								
-								if (VALUE != null)
+							if (FIELD.getName( ).matches("\\Athis\\$\\d++\\z"))
+							{ // beginning of input, "this$", one or more digits, end of input
+								try
 								{
-									return
-									(
-										typeOf
+									final Object VALUE = FIELD.get(OBJECT);
+									
+									if (VALUE != null)
+									{
+										return
 										(
-											RAW_TYPE,
-											null, // PARENT
-											PARAMETERIZATIONS,
-											typeOf(VALUE) // ENCLOSING_TYPE
-										)
-									);
+											typeOf
+											(
+												RAW_TYPE,
+												null, // PARENT
+												PARAMETERIZATIONS,
+												typeOf(VALUE) // ENCLOSING_TYPE
+											)
+										);
+									}
+									else
+									{
+										return
+										(
+											typeOf
+											(
+												RAW_TYPE,
+												null,
+												PARAMETERIZATIONS,
+												typeOf(ENCLOSING_CLASS, null, PARAMETERIZATIONS)
+											)
+										);
+									}
 								}
-								else
-								{
-									break;
+								catch (final IllegalAccessException e)
+								{ // Inaccessible fields shouldn't be present.
+									throw new RuntimeException(e);
 								}
-							}
-							catch (final IllegalAccessException e)
-							{ // Inaccessible fields shouldn't be present.
-								throw new RuntimeException( );
 							}
 						}
 					}
 				}
+				
+				throw new RuntimeException("Enclosing instance not found.");
 			}
-			
-			return
-			(
-				typeOf
-				(
-					RAW_TYPE,
-					null,
-					PARAMETERIZATIONS,
-					typeOf(ENCLOSING_CLASS, null, PARAMETERIZATIONS)
-				)
-			);
 		}
-		else
-		{
-			return typeOf(RAW_TYPE, null, PARAMETERIZATIONS, null);
-		}
+		
+		return typeOf(RAW_TYPE, null, PARAMETERIZATIONS, null);
 	}
 	
 	private static TypeToken<?> typeOf(final WildcardType WILDCARD_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		throw new UnsupportedOperationException( );
+		final Type[ ] UPPER_BOUNDS = WILDCARD_TYPE.getUpperBounds( );
+		
+		if (UPPER_BOUNDS.length == 1)
+		{
+			return typeOf(UPPER_BOUNDS[0], PARENT, PARAMETERIZATIONS);
+		}
+		else
+		{
+			throw new UnsupportedOperationException( );
+		}
 	}
 	
 	private static TypeToken<?> typeOf(final GenericArrayType GENERIC_ARRAY_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
 	{
-		throw new UnsupportedOperationException( );
+		Type type = GENERIC_ARRAY_TYPE;
+		
+		final StringBuilder CLASS_NAME = new StringBuilder( );
+		
+		do
+		{
+			type = ((GenericArrayType)type).getGenericComponentType( );
+			
+			CLASS_NAME.append('[');
+		}
+		while (type instanceof GenericArrayType);
+		
+		final Class<?> COMPONENT_TYPE =
+		(
+			typeOf(type, PARENT, PARAMETERIZATIONS).getRawType( )
+		);
+		
+		if (COMPONENT_TYPE.isPrimitive( ))
+		{
+			if(COMPONENT_TYPE.equals(byte.class))
+			{
+				CLASS_NAME.append('B');
+			}
+			else if(COMPONENT_TYPE.equals(short.class))
+			{
+				CLASS_NAME.append('S');
+			}
+			else if(COMPONENT_TYPE.equals(int.class))
+			{
+				CLASS_NAME.append('I');
+			}
+			else if(COMPONENT_TYPE.equals(long.class))
+			{
+				CLASS_NAME.append('J');
+			}
+			else if(COMPONENT_TYPE.equals(float.class))
+			{
+				CLASS_NAME.append('F');
+			}
+			else if(COMPONENT_TYPE.equals(double.class))
+			{
+				CLASS_NAME.append('D');
+			}
+			else if(COMPONENT_TYPE.equals(char.class))
+			{
+				CLASS_NAME.append('C');
+			}
+			else if(COMPONENT_TYPE.equals(boolean.class))
+			{
+				CLASS_NAME.append('Z');
+			}
+			else
+			{
+				throw new RuntimeException( );
+			}
+		}
+		else
+		{ // array of reference type
+			CLASS_NAME.append('L').append(COMPONENT_TYPE.getName( )).append(';');
+		}
+		
+		try
+		{
+			return typeOf(forName(CLASS_NAME.toString( )));
+		}
+		catch (final ClassNotFoundException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 	
 	private static TypeToken<?> typeOf(final ParameterizedType PARAMETERIZED_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
@@ -398,7 +469,21 @@ public class TypeToken<T>
 		}
 		else if (TYPE instanceof WildcardType)
 		{ // Check upper bound.
-			throw new UnsupportedOperationException( );
+			final WildcardType WILDCARD_TYPE =
+			(
+				(WildcardType)TYPE
+			);
+			
+			final Type[ ] UPPER_BOUNDS = WILDCARD_TYPE.getUpperBounds( );
+			
+			if (UPPER_BOUNDS.length == 1)
+			{
+				return traceTypeVariable(TYPE_VARIABLE, UPPER_BOUNDS[0]);
+			}
+			else
+			{
+				throw new UnsupportedOperationException( );
+			}
 		}
 		else if (TYPE instanceof GenericArrayType)
 		{ // Check component type.
@@ -687,7 +772,7 @@ public class TypeToken<T>
 	{
 		if (constructors == null)
 		{ // First time this method has been invoked on this instance.
-			constructors =
+			final Set<Constructor<T>> ACCESSIBLE_CONSTRUCTORS =
 			(
 				new LinkedHashSet<Constructor<T>>( )
 			);
@@ -723,7 +808,7 @@ public class TypeToken<T>
 							 */
 							PARAMETERIZED.setAccessible(true);
 							
-							constructors.add(PARAMETERIZED);
+							ACCESSIBLE_CONSTRUCTORS.add(PARAMETERIZED);
 						}
 						catch (final SecurityException e)
 						{
@@ -736,6 +821,8 @@ public class TypeToken<T>
 							continue;
 						}
 					}
+					
+					constructors = unmodifiableSet(ACCESSIBLE_CONSTRUCTORS);
 				}
 				catch (final SecurityException e)
 				{
@@ -747,7 +834,7 @@ public class TypeToken<T>
 					
 					for (final Constructor<?> PUBLIC : RAW_TYPE.getConstructors( ))
 					{
-						constructors.add
+						ACCESSIBLE_CONSTRUCTORS.add
 						(
 							RAW_TYPE.getDeclaredConstructor
 							(
@@ -755,6 +842,8 @@ public class TypeToken<T>
 							)
 						);
 					}
+					
+					constructors = unmodifiableSet(ACCESSIBLE_CONSTRUCTORS);
 				}
 			}
 			catch (final SecurityException e)
@@ -768,13 +857,7 @@ public class TypeToken<T>
 				constructors = emptySet( );
 			}
 			catch (final NoSuchMethodException e)
-			{
-				LOGGER.error
-				(
-					"Constructor not found.",
-					e
-				);
-				
+			{ // This should never happen.
 				throw new RuntimeException(e);
 			}
 			
@@ -904,5 +987,10 @@ public class TypeToken<T>
 		}
 		
 		return toString;
+	}
+	
+	public static void main(String[ ] args)
+	{
+		System.out.println(new TypeToken<Map<Integer, List<? extends char[ ]>>>( ) { });
 	}
 }
