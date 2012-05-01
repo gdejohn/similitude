@@ -8,6 +8,7 @@ import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.deepHashCode;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -47,6 +48,8 @@ public class TypeToken<T>
 	private final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS;
 	
 	private final TypeToken<?> ENCLOSING_TYPE;
+	
+	private Map<TypeVariable<?>, TypeToken<?>> allTypeArguments = null;
 	
 	private Set<Field> instanceFields = null;
 	
@@ -245,7 +248,7 @@ public class TypeToken<T>
 						if (ENCLOSING_CLASS.equals(FIELD.getType( )))
 						{
 							if (FIELD.getName( ).matches("\\Athis\\$\\d++\\z"))
-							{ // beginning of input, "this$", one or more digits, end of input
+							{
 								try
 								{
 									final Object VALUE = FIELD.get(OBJECT);
@@ -272,7 +275,12 @@ public class TypeToken<T>
 												RAW_TYPE,
 												null,
 												PARAMETERIZATIONS,
-												typeOf(ENCLOSING_CLASS, null, PARAMETERIZATIONS)
+												typeOf
+												(
+													ENCLOSING_CLASS,
+													null,
+													PARAMETERIZATIONS
+												)
 											)
 										);
 									}
@@ -303,7 +311,7 @@ public class TypeToken<T>
 		}
 		else
 		{
-			throw new UnsupportedOperationException( );
+			throw new RuntimeException("Multiply bounded wildcard type.");
 		}
 	}
 	
@@ -367,7 +375,9 @@ public class TypeToken<T>
 		}
 		else
 		{ // array of reference type
-			CLASS_NAME.append('L').append(COMPONENT_TYPE.getName( )).append(';');
+			CLASS_NAME.append('L');
+			CLASS_NAME.append(COMPONENT_TYPE.getName( ));
+			CLASS_NAME.append(';');
 		}
 		
 		try
@@ -482,7 +492,7 @@ public class TypeToken<T>
 			}
 			else
 			{
-				throw new UnsupportedOperationException( );
+				throw new RuntimeException("Multiply bounded wildcard type.");
 			}
 		}
 		else if (TYPE instanceof GenericArrayType)
@@ -651,7 +661,17 @@ public class TypeToken<T>
 	
 	public final Map<TypeVariable<?>, TypeToken<?>> getAllTypeArguments( )
 	{
-		return TYPE_ARGUMENTS;
+		if (allTypeArguments == null)
+		{
+			allTypeArguments = unmodifiableMap(TYPE_ARGUMENTS);
+			
+			if (allTypeArguments == null)
+			{
+				throw new RuntimeException( );
+			}
+		}
+		
+		return allTypeArguments;
 	}
 	
 	public final TypeToken<?> getTypeArgument(final TypeVariable<?> TYPE_VARIABLE)
@@ -660,10 +680,24 @@ public class TypeToken<T>
 		{
 			return TYPE_ARGUMENTS.get(TYPE_VARIABLE);
 		}
-		else
+		
+		LOGGER.debug("Type variable not found in type arguments.");
+		
+		if (ENCLOSING_TYPE != null)
 		{
-			throw new RuntimeException("Type variable not found.");
+			try
+			{
+				return ENCLOSING_TYPE.getTypeArgument(TYPE_VARIABLE);
+			}
+			catch (final RuntimeException e)
+			{
+				
+			}
 		}
+		
+		LOGGER.debug("Type variable not found in enclosing type.");
+		
+		throw new RuntimeException("Type variable not found.");
 	}
 	
 	public final TypeToken<?> getReturnType(final Method METHOD, final Object... ARGUMENTS)
@@ -781,7 +815,12 @@ public class TypeToken<T>
 			{
 				try
 				{
-					for (final Constructor<?> DECLARED : RAW_TYPE.getDeclaredConstructors( ))
+					final Constructor<?>[ ] DECLARED =
+					(
+						RAW_TYPE.getDeclaredConstructors( )
+					);
+					
+					for (final Constructor<?> CONSTRUCTOR : DECLARED)
 					{
 						try
 						{
@@ -797,7 +836,7 @@ public class TypeToken<T>
 							(
 								RAW_TYPE.getDeclaredConstructor
 								(
-									DECLARED.getParameterTypes( )
+									CONSTRUCTOR.getParameterTypes( )
 								)
 							);
 							
@@ -814,7 +853,7 @@ public class TypeToken<T>
 						{
 							LOGGER.debug
 							(
-								"Non-public constructors not available for type: {}",
+								"Non-public constructors not available: {}",
 								RAW_TYPE.getSimpleName( )
 							);
 							
@@ -832,13 +871,18 @@ public class TypeToken<T>
 						RAW_TYPE.getSimpleName( )
 					);
 					
-					for (final Constructor<?> PUBLIC : RAW_TYPE.getConstructors( ))
+					final Constructor<?>[ ] PUBLIC =
+					(
+						RAW_TYPE.getConstructors( )
+					);
+					
+					for (final Constructor<?> CONSTRUCTOR : PUBLIC)
 					{
 						ACCESSIBLE_CONSTRUCTORS.add
 						(
-							RAW_TYPE.getDeclaredConstructor
+							RAW_TYPE.getConstructor
 							(
-								PUBLIC.getParameterTypes( )
+								CONSTRUCTOR.getParameterTypes( )
 							)
 						);
 					}
@@ -905,20 +949,20 @@ public class TypeToken<T>
 	{
 		if (THAT instanceof TypeToken)
 		{
-			final TypeToken<?> THAT_TYPE_TOKEN = (TypeToken<?>)THAT;
+			final TypeToken<?> TYPE = (TypeToken<?>)THAT;
 			
-			if (RAW_TYPE.equals(THAT_TYPE_TOKEN.getRawType( )))
+			if (RAW_TYPE.equals(TYPE.getRawType( )))
 			{
-				if (TYPE_ARGUMENTS.equals(THAT_TYPE_TOKEN.getAllTypeArguments( )))
+				if (TYPE_ARGUMENTS.equals(TYPE.getAllTypeArguments( )))
 				{
 					if (ENCLOSING_TYPE == null)
 					{
-						if (THAT_TYPE_TOKEN.getEnclosingType( ) == null)
+						if (TYPE.getEnclosingType( ) == null)
 						{
 							return true;
 						}
 					}
-					else if (ENCLOSING_TYPE.equals(THAT_TYPE_TOKEN.getEnclosingType( )))
+					else if (ENCLOSING_TYPE.equals(TYPE.getEnclosingType( )))
 					{
 						return true;
 					}
@@ -987,10 +1031,5 @@ public class TypeToken<T>
 		}
 		
 		return toString;
-	}
-	
-	public static void main(String[ ] args)
-	{
-		System.out.println(new TypeToken<Map<Integer, List<? extends char[ ]>>>( ) { });
 	}
 }
