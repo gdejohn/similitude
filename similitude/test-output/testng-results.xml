@@ -1,14 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results skipped="0" failed="0" total="1" passed="1">
+<testng-results skipped="0" failed="0" total="15" passed="15">
   <reporter-output>
   </reporter-output>
-  <suite name="Default suite" duration-ms="51" started-at="2012-05-02T11:57:52Z" finished-at="2012-05-02T11:57:52Z">
+  <suite name="Default suite" duration-ms="111" started-at="2012-05-02T16:24:33Z" finished-at="2012-05-02T16:24:34Z">
     <groups>
     </groups>
-    <test name="Default test" duration-ms="51" started-at="2012-05-02T11:57:52Z" finished-at="2012-05-02T11:57:52Z">
+    <test name="Default test" duration-ms="111" started-at="2012-05-02T16:24:33Z" finished-at="2012-05-02T16:24:34Z">
       <class name="org.gdejohn.similitude.TypeTokenTest">
-        <test-method status="PASS" signature="nonGenericInterfaces()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@17d5d2a]" name="nonGenericInterfaces" duration-ms="32" started-at="2012-05-02T11:57:52Z" finished-at="2012-05-02T11:57:52Z">
-        </test-method> <!-- nonGenericInterfaces -->
+        <test-method status="PASS" signature="genericArrayType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="genericArrayType" duration-ms="23" started-at="2012-05-02T16:24:33Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- genericArrayType -->
+        <test-method status="PASS" signature="genericEnclosingType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="genericEnclosingType" duration-ms="5" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- genericEnclosingType -->
+        <test-method status="PASS" signature="genericMethodReturnType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="genericMethodReturnType" duration-ms="6" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- genericMethodReturnType -->
+        <test-method status="PASS" signature="genericSuperType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="genericSuperType" duration-ms="17" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- genericSuperType -->
+        <test-method status="PASS" signature="inheritedFields()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="inheritedFields" duration-ms="3" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- inheritedFields -->
+        <test-method status="PASS" signature="instanceOfTopLevelGenericType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="instanceOfTopLevelGenericType" duration-ms="6" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- instanceOfTopLevelGenericType -->
+        <test-method status="PASS" signature="nonGenericEquality()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="nonGenericEquality" duration-ms="1" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- nonGenericEquality -->
+        <test-method status="PASS" signature="nonGenericObject()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="nonGenericObject" duration-ms="1" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- nonGenericObject -->
+        <test-method status="PASS" signature="nonGenericSuperType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="nonGenericSuperType" duration-ms="2" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- nonGenericSuperType -->
+        <test-method status="PASS" signature="nonGenericType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="nonGenericType" duration-ms="1" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- nonGenericType -->
+        <test-method status="PASS" signature="nonGenericTypeToString()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="nonGenericTypeToString" duration-ms="1" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- nonGenericTypeToString -->
+        <test-method status="PASS" signature="parameterizedType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="parameterizedType" duration-ms="4" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- parameterizedType -->
+        <test-method status="PASS" signature="privateConstructor()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="privateConstructor" duration-ms="2" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- privateConstructor -->
+        <test-method status="PASS" signature="superTypeToken()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="superTypeToken" duration-ms="2" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- superTypeToken -->
+        <test-method status="PASS" signature="wildcardType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@872380]" name="wildcardType" duration-ms="3" started-at="2012-05-02T16:24:34Z" finished-at="2012-05-02T16:24:34Z">
+        </test-method> <!-- wildcardType -->
       </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
     </test> <!-- Default test -->
   </suite> <!-- Default suite -->

@@ -127,7 +127,14 @@ public class TypeToken<T>
 			
 			for (final Type INTERFACE : GENERIC_INTERFACES)
 			{
-				INTERFACES.add(typeOf(INTERFACE, this));
+				if (INTERFACES.add(typeOf(INTERFACE, this)))
+				{
+					continue;
+				}
+				else
+				{
+					throw new RuntimeException("Interface already added.");
+				}
 			}
 			
 			this.INTERFACES = unmodifiableSet(INTERFACES);
@@ -331,12 +338,12 @@ public class TypeToken<T>
 											typeOf
 											(
 												RAW_TYPE,
-												null,
+												null, // PARENT
 												PARAMETERIZATIONS,
 												typeOf
-												(
+												( // ENCLOSING_TYPE
 													ENCLOSING_CLASS,
-													null,
+													null, // PARENT
 													PARAMETERIZATIONS
 												)
 											)
@@ -522,97 +529,6 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static LinkedList<TypeVariable<?>> traceTypeVariable(final TypeVariable<?> TYPE_VARIABLE, final Type TYPE)
-	{
-		if (TYPE instanceof Class)
-		{
-			throw new RuntimeException("Type variable not found.");
-		}
-		else if (TYPE instanceof WildcardType)
-		{ // Check upper bound.
-			final WildcardType WILDCARD_TYPE = (WildcardType)TYPE;
-			
-			final Type[ ] UPPER_BOUNDS = WILDCARD_TYPE.getUpperBounds( );
-			
-			if (UPPER_BOUNDS.length == 1)
-			{
-				return traceTypeVariable(TYPE_VARIABLE, UPPER_BOUNDS[0]);
-			}
-			else
-			{
-				throw new RuntimeException("Multiply bounded wildcard type.");
-			}
-		}
-		else if (TYPE instanceof GenericArrayType)
-		{ // Check component type.
-			throw new UnsupportedOperationException( );
-		}
-		else if (TYPE instanceof ParameterizedType)
-		{
-			final ParameterizedType PARAMETERIZED_TYPE =
-			(
-				(ParameterizedType)TYPE
-			);
-			
-			final Type RAW_TYPE = PARAMETERIZED_TYPE.getRawType( );
-			
-			final TypeVariable<?>[ ] TYPE_PARAMETERS;
-			
-			if (RAW_TYPE instanceof Class)
-			{
-				TYPE_PARAMETERS = ((Class<?>)RAW_TYPE).getTypeParameters( );
-			}
-			else
-			{
-				throw new RuntimeException( );
-			}
-			
-			final Type[ ] TYPE_ARGUMENTS =
-			(
-				PARAMETERIZED_TYPE.getActualTypeArguments( )
-			);
-			
-			for (int index = 0; index < TYPE_PARAMETERS.length; index++)
-			{
-				try
-				{
-					final LinkedList<TypeVariable<?>> TRACE =
-					(
-						traceTypeVariable
-						(
-							TYPE_VARIABLE, TYPE_ARGUMENTS[index]
-						)
-					);
-					
-					TRACE.addFirst(TYPE_PARAMETERS[index]);
-					
-					return TRACE;
-				}
-				catch (final RuntimeException e)
-				{
-					continue;
-				}
-			}
-			
-			throw new RuntimeException("Type variable not found.");
-		}
-		else if (TYPE instanceof TypeVariable)
-		{
-			if (TYPE_VARIABLE.equals(TYPE))
-			{
-				return new LinkedList<TypeVariable<?>>( );
-			}
-			else
-			{ // Check upper bounds.
-				throw new UnsupportedOperationException( );
-			}
-		}
-		else
-		{
-			throw new RuntimeException("Subtype of type not recognized.");
-		}
-	}
-	
 	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS)
 	{
 		if (PARENT != null)
@@ -652,7 +568,7 @@ public class TypeToken<T>
 				{
 					final List<TypeVariable<?>> TRACE =
 					(
-						traceTypeVariable(TYPE_VARIABLE, ENTRY.getKey( ))
+						traceTypeVariable(ENTRY.getKey( ), TYPE_VARIABLE)
 					);
 					
 					TypeToken<?> typeArgument = typeOf(OBJECT);
@@ -722,6 +638,119 @@ public class TypeToken<T>
 	public static TypeToken<?> typeOf(final Type TYPE)
 	{
 		return typeOf(TYPE, (TypeToken<?>)null);
+	}
+	
+	private static LinkedList<TypeVariable<?>> traceTypeVariable(final WildcardType TYPE, final TypeVariable<?> TYPE_VARIABLE)
+	{
+		final Type[ ] UPPER_BOUNDS = TYPE.getUpperBounds( );
+		
+		if (UPPER_BOUNDS.length == 1)
+		{
+			return traceTypeVariable(UPPER_BOUNDS[0], TYPE_VARIABLE);
+		}
+		else
+		{
+			throw new RuntimeException("Multiply bounded wildcard type.");
+		}
+	}
+	
+	private static LinkedList<TypeVariable<?>> traceTypeVariable(final GenericArrayType TYPE, final TypeVariable<?> TYPE_VARIABLE)
+	{
+		throw new UnsupportedOperationException( );
+	}
+	
+	private static LinkedList<TypeVariable<?>> traceTypeVariable(final ParameterizedType TYPE, final TypeVariable<?> TYPE_VARIABLE)
+	{
+		final Type RAW_TYPE = TYPE.getRawType( );
+		
+		final TypeVariable<?>[ ] TYPE_PARAMETERS;
+		
+		if (RAW_TYPE instanceof Class)
+		{
+			TYPE_PARAMETERS = ((Class<?>)RAW_TYPE).getTypeParameters( );
+		}
+		else
+		{
+			throw new RuntimeException( );
+		}
+		
+		final Type[ ] TYPE_ARGUMENTS =
+		(
+			TYPE.getActualTypeArguments( )
+		);
+		
+		for (int index = 0; index < TYPE_PARAMETERS.length; index++)
+		{
+			try
+			{
+				final LinkedList<TypeVariable<?>> TRACE =
+				(
+					traceTypeVariable(TYPE_ARGUMENTS[index], TYPE_VARIABLE)
+				);
+				
+				TRACE.addFirst(TYPE_PARAMETERS[index]);
+				
+				return TRACE;
+			}
+			catch (final RuntimeException e)
+			{
+				continue;
+			}
+		}
+		
+		throw new RuntimeException("Type variable not found.");
+	}
+	
+	private static LinkedList<TypeVariable<?>> traceTypeVariable(final TypeVariable<?> TYPE, final TypeVariable<?> TYPE_VARIABLE)
+	{
+		if (TYPE_VARIABLE.equals(TYPE))
+		{
+			return new LinkedList<TypeVariable<?>>( );
+		}
+		else
+		{
+			for (final Type BOUND : TYPE.getBounds( ))
+			{
+				try
+				{
+					return traceTypeVariable(BOUND, TYPE_VARIABLE);
+				}
+				catch (final RuntimeException e)
+				{
+					continue;
+				}
+			}
+			
+			throw new RuntimeException("Type variable not found.");
+		}
+	}
+	
+	private static LinkedList<TypeVariable<?>> traceTypeVariable(final Type TYPE, final TypeVariable<?> TYPE_VARIABLE)
+	{
+		if (TYPE instanceof Class)
+		{
+			throw new RuntimeException("Type variable not found.");
+		}
+		else if (TYPE instanceof WildcardType)
+		{ // Check upper bound.
+			return traceTypeVariable((WildcardType)TYPE, TYPE_VARIABLE);
+		}
+		else if (TYPE instanceof GenericArrayType)
+		{ // Check component type.
+			return traceTypeVariable((GenericArrayType)TYPE, TYPE_VARIABLE);
+		}
+		else if (TYPE instanceof ParameterizedType)
+		{
+			return traceTypeVariable((ParameterizedType)TYPE, TYPE_VARIABLE);
+		}
+		else if (TYPE instanceof TypeVariable)
+		{
+			return traceTypeVariable((TypeVariable<?>)TYPE, TYPE_VARIABLE);
+		}
+		else
+		{
+			throw new RuntimeException("Subtype of type not recognized.");
+		}
 	}
 	
 	public final Class<T> getRawType( )
@@ -854,8 +883,6 @@ public class TypeToken<T>
 						throw new RuntimeException( );
 					}
 				}
-				
-				System.out.println(PARAMETERIZATIONS);
 				
 				return
 				(

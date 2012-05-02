@@ -5,7 +5,18 @@
     <classes>
       <class name="org.gdejohn.similitude.TypeTokenTest">
         <methods>
-          <include name="nonGenericInterfaces"/>
+          <include name="parameterizedType"/>
+          <include name="nonGenericTypeToString"/>
+          <include name="superTypeToken"/>
+          <include name="genericMethodReturnType"/>
+          <include name="nonGenericType"/>
+          <include name="nonGenericObject"/>
+          <include name="nonGenericEquality"/>
+          <include name="wildcardType"/>
+          <include name="genericEnclosingType"/>
+          <include name="genericArrayType"/>
+          <include name="genericSuperType"/>
+          <include name="instanceOfTopLevelGenericType"/>
         </methods>
       </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
     </classes>

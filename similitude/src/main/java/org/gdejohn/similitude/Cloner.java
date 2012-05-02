@@ -1,6 +1,6 @@
 package org.gdejohn.similitude;
 
-import static java.lang.Boolean.valueOf;
+import static java.lang.Boolean.FALSE;
 import static java.lang.Byte.valueOf;
 import static java.lang.Character.valueOf;
 import static java.lang.Double.valueOf;
@@ -13,6 +13,7 @@ import static java.lang.reflect.Array.get;
 import static java.lang.reflect.Array.getLength;
 import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Array.set;
+import static java.lang.reflect.Modifier.isPublic;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static org.gdejohn.similitude.TypeToken.typeOf;
@@ -54,7 +55,18 @@ public final class Cloner
 			{
 				<T> void map(final Class<T> CLASS, final T VALUE)
 				{
-					put(typeOf(CLASS), VALUE);
+					if (VALUE == null)
+					{
+						throw new RuntimeException("Value can't be null.");
+					}
+					else if (put(typeOf(CLASS), VALUE) == null)
+					{
+						return;
+					}
+					else
+					{
+						throw new RuntimeException("Mapping already exists.");
+					}
 				}
 				
 				/*
@@ -68,7 +80,7 @@ public final class Cloner
 					map(Float.class, valueOf(0.0f));
 					map(Double.class, valueOf(0.0d));
 					map(Character.class, valueOf('\u0000'));
-					map(Boolean.class, valueOf(false));
+					map(Boolean.class, FALSE);
 					
 					map(String.class, "");
 				}
@@ -414,7 +426,10 @@ public final class Cloner
 				{ // Clone instance fields in ORIGINAL, set results in CLONE.
 					try
 					{
-						FIELD.setAccessible(true);
+						if (isPublic(FIELD.getModifiers( )) == false)
+						{
+							FIELD.setAccessible(true);
+						}
 						
 						final Object VALUE =
 						(
