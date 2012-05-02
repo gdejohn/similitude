@@ -41,7 +41,9 @@ public class TypeToken<T>
 		emptyMap( )
 	);
 	
-	private static final Map<Type, Object> NO_PARAMETERIZATIONS = emptyMap( );
+	private static final Map<Type, List<Object>> NO_PARAMETERIZATIONS = emptyMap( );
+	
+	private static final Set<TypeToken<?>> NO_INTERFACES = emptySet( );
 	
 	private final Class<T> RAW_TYPE;
 	
@@ -49,7 +51,9 @@ public class TypeToken<T>
 	
 	private final TypeToken<?> ENCLOSING_TYPE;
 	
-	private Map<TypeVariable<?>, TypeToken<?>> allTypeArguments = null;
+	private final TypeToken<?> SUPER_TYPE;
+	
+	private final Set<TypeToken<?>> INTERFACES;
 	
 	private Set<Field> instanceFields = null;
 	
@@ -79,8 +83,14 @@ public class TypeToken<T>
 				);
 				
 				this.RAW_TYPE = (Class<T>)TYPE_TOKEN.getRawType( );
+				
 				this.TYPE_ARGUMENTS = TYPE_TOKEN.getAllTypeArguments( );
+				
 				this.ENCLOSING_TYPE = TYPE_TOKEN.getEnclosingType( );
+				
+				this.SUPER_TYPE = TYPE_TOKEN.getSuperType( );
+				
+				this.INTERFACES = TYPE_TOKEN.getInterfaces( );
 				
 				return;
 			}
@@ -92,8 +102,36 @@ public class TypeToken<T>
 	private TypeToken(final Class<T> RAW_TYPE, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS, final TypeToken<?> ENCLOSING_TYPE)
 	{
 		this.RAW_TYPE = RAW_TYPE;
-		this.TYPE_ARGUMENTS = TYPE_ARGUMENTS;
+		
+		this.TYPE_ARGUMENTS = unmodifiableMap(TYPE_ARGUMENTS);
+		
 		this.ENCLOSING_TYPE = ENCLOSING_TYPE;
+		
+		this.SUPER_TYPE = typeOf(RAW_TYPE.getGenericSuperclass( ), this);
+		
+		final Type[ ] GENERIC_INTERFACES = RAW_TYPE.getGenericInterfaces( );
+		
+		if (GENERIC_INTERFACES.length == 0)
+		{
+			this.INTERFACES = NO_INTERFACES;
+		}
+		else
+		{
+			final Set<TypeToken<?>>	INTERFACES =
+			(
+				new LinkedHashSet<TypeToken<?>>
+				(
+					GENERIC_INTERFACES.length, nextUp(1.0f)
+				)
+			);
+			
+			for (final Type INTERFACE : GENERIC_INTERFACES)
+			{
+				INTERFACES.add(typeOf(INTERFACE, this));
+			}
+			
+			this.INTERFACES = unmodifiableSet(INTERFACES);
+		}
 	}
 	
 	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final Map<TypeVariable<?>, TypeToken<?>> TYPE_ARGUMENTS, final TypeToken<?> ENCLOSING_TYPE)
@@ -108,7 +146,7 @@ public class TypeToken<T>
 		return new TypeToken<T>(CLASS, TYPE_ARGUMENTS, ENCLOSING_TYPE);
 	}
 	
-	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE)
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE)
 	{
 		final TypeVariable<Class<T>>[ ] TYPE_PARAMETERS =
 		(
@@ -142,7 +180,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS)
 	{
 		final TypeToken<?> ENCLOSING_TYPE;
 		
@@ -195,9 +233,9 @@ public class TypeToken<T>
 		
 		final Set<Field> INSTANCE_FIELDS = getAllInstanceFields(RAW_TYPE);
 		
-		final Map<Type, Object> PARAMETERIZATIONS =
+		final Map<Type, List<Object>> PARAMETERIZATIONS =
 		(
-			new LinkedHashMap<Type, Object>
+			new LinkedHashMap<Type, List<Object>>
 			(
 				INSTANCE_FIELDS.size( ), nextUp(1.0f)
 			)
@@ -219,20 +257,40 @@ public class TypeToken<T>
 				final Object VALUE = FIELD.get(OBJECT);
 				
 				if (VALUE != null)
-				{
-					PARAMETERIZATIONS.put(FIELD.getGenericType( ), VALUE);
+				{ // Check for recursive data types?
+					final Type FIELD_TYPE = FIELD.getGenericType( );
+					
+					final List<Object> OBJECTS =
+					(
+						PARAMETERIZATIONS.get(FIELD_TYPE)
+					);
+					
+					if(OBJECTS == null)
+					{
+						LinkedList<Object> LIST = new LinkedList<Object>( );
+						
+						LIST.add(VALUE);
+						
+						PARAMETERIZATIONS.put(FIELD_TYPE, LIST);
+					}
+					else
+					{
+						OBJECTS.add(VALUE);
+					}
+					
+					continue;
 				}
 			}
 			catch (final SecurityException e)
 			{
-				ITERATOR.remove( );
-				
-				continue;
+				LOGGER.debug("Couldn't set field accessible.", e);
 			}
 			catch (final IllegalAccessException e)
 			{ // SecurityException should always be thrown before this.
 				throw new RuntimeException(e);
 			}
+			
+			ITERATOR.remove( ); // If exception was thrown or VALUE was null.
 		}
 		
 		if (RAW_TYPE.isMemberClass( ))
@@ -301,7 +359,7 @@ public class TypeToken<T>
 		return typeOf(RAW_TYPE, null, PARAMETERIZATIONS, null);
 	}
 	
-	private static TypeToken<?> typeOf(final WildcardType WILDCARD_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final WildcardType WILDCARD_TYPE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS)
 	{
 		final Type[ ] UPPER_BOUNDS = WILDCARD_TYPE.getUpperBounds( );
 		
@@ -315,7 +373,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static TypeToken<?> typeOf(final GenericArrayType GENERIC_ARRAY_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final GenericArrayType GENERIC_ARRAY_TYPE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS)
 	{
 		Type type = GENERIC_ARRAY_TYPE;
 		
@@ -390,7 +448,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static TypeToken<?> typeOf(final ParameterizedType PARAMETERIZED_TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final ParameterizedType PARAMETERIZED_TYPE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS)
 	{
 		final Type RAW_TYPE = PARAMETERIZED_TYPE.getRawType( );
 		
@@ -466,23 +524,13 @@ public class TypeToken<T>
 	
 	private static LinkedList<TypeVariable<?>> traceTypeVariable(final TypeVariable<?> TYPE_VARIABLE, final Type TYPE)
 	{
-		if (TYPE instanceof TypeVariable)
+		if (TYPE instanceof Class)
 		{
-			if (TYPE_VARIABLE.equals(TYPE))
-			{
-				return new LinkedList<TypeVariable<?>>( );
-			}
-			else
-			{ // Check upper bounds.
-				throw new UnsupportedOperationException( );
-			}
+			throw new RuntimeException("Type variable not found.");
 		}
 		else if (TYPE instanceof WildcardType)
 		{ // Check upper bound.
-			final WildcardType WILDCARD_TYPE =
-			(
-				(WildcardType)TYPE
-			);
+			final WildcardType WILDCARD_TYPE = (WildcardType)TYPE;
 			
 			final Type[ ] UPPER_BOUNDS = WILDCARD_TYPE.getUpperBounds( );
 			
@@ -548,9 +596,16 @@ public class TypeToken<T>
 			
 			throw new RuntimeException("Type variable not found.");
 		}
-		else if (TYPE instanceof Class)
+		else if (TYPE instanceof TypeVariable)
 		{
-			throw new RuntimeException("Type variable not found.");
+			if (TYPE_VARIABLE.equals(TYPE))
+			{
+				return new LinkedList<TypeVariable<?>>( );
+			}
+			else
+			{ // Check upper bounds.
+				throw new UnsupportedOperationException( );
+			}
 		}
 		else
 		{
@@ -558,7 +613,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS)
 	{
 		if (PARENT != null)
 		{
@@ -572,37 +627,57 @@ public class TypeToken<T>
 			}
 		}
 		
-		for (final Entry<Type, Object> ENTRY : PARAMETERIZATIONS.entrySet( ))
+		final List<Object> OBJECTS = PARAMETERIZATIONS.get(TYPE_VARIABLE);
+		
+		if (OBJECTS != null)
 		{
-			try
+			for (final Object OBJECT : OBJECTS)
 			{
-				final List<TypeVariable<?>> TRACE =
-				(
-					traceTypeVariable(TYPE_VARIABLE, ENTRY.getKey( ))
-				);
-				
-				TypeToken<?> typeArgument = typeOf(ENTRY.getValue( ));
-				
-				for (final TypeVariable<?> TYPE_PARAMETER : TRACE)
+				try
 				{
-					typeArgument =
-					(
-						typeArgument.getTypeArgument(TYPE_PARAMETER)
-					);
+					return typeOf(OBJECT);
 				}
-				
-				return typeArgument;
+				catch (final RuntimeException e)
+				{
+					
+				}
 			}
-			catch (final RuntimeException e)
+		}
+		
+		for (final Entry<Type, List<Object>> ENTRY : PARAMETERIZATIONS.entrySet( ))
+		{
+			for (final Object OBJECT : ENTRY.getValue( ))
 			{
-				continue;
+				try
+				{
+					final List<TypeVariable<?>> TRACE =
+					(
+						traceTypeVariable(TYPE_VARIABLE, ENTRY.getKey( ))
+					);
+					
+					TypeToken<?> typeArgument = typeOf(OBJECT);
+					
+					for (final TypeVariable<?> TYPE_PARAMETER : TRACE)
+					{
+						typeArgument =
+						(
+							typeArgument.getTypeArgument(TYPE_PARAMETER)
+						);
+					}
+					
+					return typeArgument;
+				}
+				catch (final RuntimeException e)
+				{
+					continue;
+				}
 			}
 		}
 		
 		throw new RuntimeException("Type argument couldn't be determined.");
 	}
 	
-	private static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT, final Map<Type, Object> PARAMETERIZATIONS)
+	private static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS)
 	{
 		if (TYPE == null)
 		{
@@ -659,19 +734,19 @@ public class TypeToken<T>
 		return ENCLOSING_TYPE;
 	}
 	
+	public final TypeToken<?> getSuperType( )
+	{
+		return SUPER_TYPE;
+	}
+	
+	public final Set<TypeToken<?>> getInterfaces( )
+	{
+		return INTERFACES;
+	}
+	
 	public final Map<TypeVariable<?>, TypeToken<?>> getAllTypeArguments( )
 	{
-		if (allTypeArguments == null)
-		{
-			allTypeArguments = unmodifiableMap(TYPE_ARGUMENTS);
-			
-			if (allTypeArguments == null)
-			{
-				throw new RuntimeException( );
-			}
-		}
-		
-		return allTypeArguments;
+		return TYPE_ARGUMENTS;
 	}
 	
 	public final TypeToken<?> getTypeArgument(final TypeVariable<?> TYPE_VARIABLE)
@@ -697,6 +772,34 @@ public class TypeToken<T>
 		
 		LOGGER.debug("Type variable not found in enclosing type.");
 		
+		if (SUPER_TYPE != null)
+		{
+			try
+			{
+				return SUPER_TYPE.getTypeArgument(TYPE_VARIABLE);
+			}
+			catch (final RuntimeException e)
+			{
+				
+			}
+		}
+		
+		LOGGER.debug("Type variable not found in super type.");
+		
+		for (final TypeToken<?> INTERFACE : INTERFACES)
+		{
+			try
+			{
+				return INTERFACE.getTypeArgument(TYPE_VARIABLE);
+			}
+			catch (final RuntimeException e)
+			{
+				continue;
+			}
+		}
+		
+		LOGGER.debug("Type variable not found in interfaces.");
+		
 		throw new RuntimeException("Type variable not found.");
 	}
 	
@@ -716,9 +819,9 @@ public class TypeToken<T>
 			
 			if (GENERIC_PARAMETERS.length == ARGUMENTS.length)
 			{
-				final Map<Type, Object> PARAMETERIZATIONS =
+				final Map<Type, List<Object>> PARAMETERIZATIONS =
 				(
-					new LinkedHashMap<Type, Object>
+					new LinkedHashMap<Type, List<Object>>
 					(
 						ARGUMENTS.length, nextUp(1.0f)
 					)
@@ -728,16 +831,31 @@ public class TypeToken<T>
 				{
 					if (PARAMETERS[index].isInstance(ARGUMENTS[index]))
 					{
-						PARAMETERIZATIONS.put
+						final List<Object> OBJECTS =
 						(
-							GENERIC_PARAMETERS[index], ARGUMENTS[index]
+							PARAMETERIZATIONS.get(GENERIC_PARAMETERS[index])
 						);
+						
+						if(OBJECTS == null)
+						{
+							LinkedList<Object> LIST = new LinkedList<Object>( );
+							
+							LIST.add(ARGUMENTS[index]);
+							
+							PARAMETERIZATIONS.put(GENERIC_PARAMETERS[index], LIST);
+						}
+						else
+						{
+							OBJECTS.add(ARGUMENTS[index]);
+						}
 					}
 					else if (ARGUMENTS[index] != null)
 					{
 						throw new RuntimeException( );
 					}
 				}
+				
+				System.out.println(PARAMETERIZATIONS);
 				
 				return
 				(
@@ -1031,5 +1149,13 @@ public class TypeToken<T>
 		}
 		
 		return toString;
+	}
+	
+	public static void main(String[ ] args) throws Exception
+	{
+		/*for (Field f : getAllInstanceFields(java.util.LinkedList.class.getDeclaredClasses( )[2]))
+		{
+			System.out.println(f.getGenericType( ));
+		}*/
 	}
 }

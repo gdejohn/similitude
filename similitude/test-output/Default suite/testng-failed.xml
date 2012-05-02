@@ -3,19 +3,11 @@
 <suite name="Failed suite [Default suite]">
   <test name="Default test(failed)" preserve-order="true">
     <classes>
-      <class name="org.gdejohn.similitude.ClonerTest">
+      <class name="org.gdejohn.similitude.TypeTokenTest">
         <methods>
-          <include name="testNestedTypeParameters"/>
-          <include name="testVarargsInterface"/>
-          <include name="testParameterizedByTypeVariable"/>
-          <include name="testLocalClass"/>
-          <include name="testInterface"/>
-          <include name="testParameterizedReturnType"/>
-          <include name="testListOfStrings"/>
-          <include name="testReturnsGenericArray"/>
-          <include name="testGenericInterface"/>
+          <include name="nonGenericInterfaces"/>
         </methods>
-      </class> <!-- org.gdejohn.similitude.ClonerTest -->
+      </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
     </classes>
   </test> <!-- Default test(failed) -->
 </suite> <!-- Failed suite [Default suite] -->

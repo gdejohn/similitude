@@ -8,13 +8,17 @@ import static org.gdejohn.similitude.TypeToken.typeOf;
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.fail;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -269,7 +273,7 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			TypeToken<Foo<String>> parent = new TypeToken<Foo<String>>( ) { };
 			TypeToken<?> token = typeOf(Foo.class.getDeclaredConstructors( )[0].getGenericParameterTypes( )[0], parent);
@@ -298,7 +302,7 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			TypeToken<Bar<String>> parent = new TypeToken<Bar<String>>( ) { };
 			TypeToken<?> token = typeOf(Bar.class.getDeclaredConstructors( )[0].getGenericParameterTypes( )[0], parent);
@@ -494,14 +498,7 @@ public class TypeTokenTest
 				field = arg;
 			}
 			
-			class Inner
-			{
-				@SuppressWarnings("unused")
-				public Outer<String>.Inner method( )
-				{
-					return null;
-				}
-			}
+			class Inner { }
 		}
 		
 		try
@@ -532,6 +529,132 @@ public class TypeTokenTest
 		catch (Exception e)
 		{
 			fail("Failed.", e);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void nonGenericSuperType( )
+	{
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<Bar> bar = typeOf(Bar.class);
+			TypeToken<?> foo = bar.getSuperType( );
+			TypeToken<?> object = foo.getSuperType( );
+			
+			assertEquals(foo.getRawType( ), Foo.class);
+			assertEquals(object.getRawType( ), Object.class);
+			assertNull(object.getSuperType( ));
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void genericSuperType( )
+	{
+		class Foo<E, F> { }
+		
+		class Bar<R> extends Foo<R, Set<? extends Object[ ]>> { }
+		
+		class Baz<Z> extends Bar<Z> { }
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeVariable<?> E = Foo.class.getTypeParameters( )[0];
+			TypeVariable<?> F = Foo.class.getTypeParameters( )[1];
+			TypeVariable<?> R = Bar.class.getTypeParameters( )[0];
+			TypeVariable<?> T = Set.class.getTypeParameters( )[0];
+			
+			TypeToken<Baz<Cloneable>> baz = new TypeToken<Baz<Cloneable>>( ) { };
+			TypeToken<?> bar = baz.getSuperType( );
+			TypeToken<?> foo = bar.getSuperType( );
+			TypeToken<?> fooF = foo.getTypeArgument(F);
+			TypeToken<?> object = foo.getSuperType( );
+
+			assertEquals(bar.getRawType( ), Bar.class);
+			assertEquals(bar.getTypeArgument(R).getRawType( ), Cloneable.class);
+			assertEquals(foo.getRawType( ), Foo.class);
+			assertEquals(foo.getTypeArgument(E).getRawType( ), Cloneable.class);
+			assertEquals(fooF.getRawType( ), Set.class);
+			assertEquals(fooF.getTypeArgument(T).getRawType( ), Object[ ].class);
+			assertEquals(object.getRawType( ), Object.class);
+			assertNull(object.getSuperType( ));
+			assertEquals(bar.getTypeArgument(E).getRawType( ), Cloneable.class);
+			assertEquals(bar.getTypeArgument(F).getRawType( ), Set.class);
+			
+			try
+			{
+				bar.getTypeArgument(T);
+				
+				fail("Failed.");
+			}
+			catch (Exception e)
+			{
+				return;
+			}
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	interface IFirst { }
+	
+	interface ISecond { }
+	
+	interface IThird extends IFirst { }
+	
+	interface IFourth extends ISecond { }
+	
+	@Test
+	public static void nonGenericInterfaces( )
+	{
+		class Impl implements IThird, IFourth { }
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<Impl> token = typeOf(Impl.class);
+			
+			Iterator<TypeToken<?>> iterator = token.getInterfaces( ).iterator( );
+			
+			assertEquals(token.getInterfaces( ).size( ), 2);
+			
+			TypeToken<?> third = iterator.next( );
+			
+			assertEquals(third.getRawType( ), IThird.class);
+			assertNull(third.getSuperType( ));
+			
+			TypeToken<?> fourth = iterator.next( );
+			
+			assertEquals(fourth.getRawType( ), IFourth.class);
+			assertNull(fourth.getSuperType( ));
+			
+			iterator = third.getInterfaces( ).iterator( );
+			
+			assertEquals(iterator.next( ).getRawType( ), IFirst.class);
+			assertFalse(iterator.hasNext( ));
+			
+			iterator = fourth.getInterfaces( ).iterator( );
+			
+			assertEquals(iterator.next( ).getRawType( ), ISecond.class);
+			assertFalse(iterator.hasNext( ));
 		}
 		finally
 		{
