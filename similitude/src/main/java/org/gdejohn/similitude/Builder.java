@@ -3,8 +3,7 @@ package org.gdejohn.similitude;
 import static java.lang.Math.nextUp;
 import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Modifier.isAbstract;
-import static java.lang.reflect.Proxy.getProxyClass;
-import static java.lang.reflect.Proxy.isProxyClass;
+import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Collections.unmodifiableMap;
 import static org.gdejohn.similitude.Cloner.BASIC_TYPES;
 import static org.gdejohn.similitude.TypeToken.typeOf;
@@ -319,37 +318,6 @@ public final class Builder
 		{ // Base case, return empty array of CLASS's component type.
 			return CLASS.cast(newInstance(CLASS.getComponentType( ), 0));
 		}
-		else if (isProxyClass(CLASS))
-		{
-			try
-			{
-				final Constructor<T> CONSTRUCTOR =
-				(
-					CLASS.getConstructor(InvocationHandler.class)
-				);
-				
-				final InvocationHandler HANDLER =
-				(
-					new InvocationHandler( )
-					{
-						@Override
-						public Object invoke(final Object PROXY, final Method METHOD, final Object[ ] ARGUMENTS)
-						{
-							return
-							(
-								instantiate(TYPE.getReturnType(METHOD, ARGUMENTS))
-							);
-						}
-					}
-				);
-				
-				return CONSTRUCTOR.newInstance(HANDLER);
-			}
-			catch (final Exception e)
-			{
-				throw new RuntimeException(e);
-			}
-		}
 		else if (CLASS.isInterface( ))
 		{ // Base case, return dynamic proxy.
 			LOGGER.debug
@@ -361,9 +329,22 @@ public final class Builder
 			
 			final Class<?>[ ] INTERFACES = new Class<?>[ ] {CLASS};
 			
-			final Class<?> PROXY = getProxyClass(LOADER, INTERFACES);;
+			final InvocationHandler HANDLER =
+			(
+				new InvocationHandler( )
+				{
+					@Override
+					public Object invoke(final Object PROXY, final Method METHOD, final Object[ ] ARGUMENTS)
+					{
+						return
+						(
+							instantiate(TYPE.getReturnType(METHOD, ARGUMENTS))
+						);
+					}
+				}
+			);
 			
-			return CLASS.cast(instantiate(typeOf(PROXY, TYPE)));
+			return CLASS.cast(newProxyInstance(LOADER, INTERFACES, HANDLER));
 		}
 		else if (isAbstract(CLASS.getModifiers( )))
 		{

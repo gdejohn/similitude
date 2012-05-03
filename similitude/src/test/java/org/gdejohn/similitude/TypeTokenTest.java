@@ -12,6 +12,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.lang.reflect.Constructor;
@@ -670,7 +671,7 @@ public class TypeTokenTest
 	{
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			TypeVariable<?> E = Enum.class.getTypeParameters( )[0];
 			
@@ -696,6 +697,60 @@ public class TypeTokenTest
 			TypeVariable<?> T = Comparable.class.getTypeParameters( )[0];
 			
 			assertEquals(typeOf(String.class).getTypeArgument(T).getRawType( ), String.class);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void instanceOfNonGenericType( )
+	{
+		try
+		{
+			// ROOT_LOGGER.setLevel(DEBUG);
+			
+			assertTrue(typeOf(String.class).isInstance("xyzzy"));
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void instanceOfGenericType( )
+	{
+		abstract class Abstract<A> implements Comparable<A> { }
+		
+		class Impl<I extends Comparable<? super I>> extends Abstract<I>
+		{
+			I field;
+			
+			Impl(I arg)
+			{
+				field = arg;
+			}
+			
+			@Override
+			public int compareTo(I o)
+			{
+				return field.compareTo(o);
+			}
+		}
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<Comparable<CharSequence>> comparableCharSequence = new TypeToken<Comparable<CharSequence>>( ) { };
+			TypeToken<Comparable<Number>> comparableNumber = new TypeToken<Comparable<Number>>( ) { };
+			
+			Impl<String> instance = new Impl<String>("xyzzy");
+			
+			assertTrue(comparableCharSequence.isInstance(instance));
+			assertFalse(comparableNumber.isInstance(instance));
 		}
 		finally
 		{

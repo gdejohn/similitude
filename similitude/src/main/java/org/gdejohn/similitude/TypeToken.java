@@ -111,7 +111,7 @@ public class TypeToken<T>
 		
 		if (CALLER != null)
 		{
-			LOGGER.debug("Self-reference detected for type: {}", this);
+			LOGGER.debug("Self-reference encountered for type: {}", this);
 			
 			throw new CircularSuperTypeException(CALLER);
 		}
@@ -119,9 +119,15 @@ public class TypeToken<T>
 		{
 			CALLERS.put(this, this);
 			
-			this.SUPER_TYPE = typeOf(RAW_TYPE.getGenericSuperclass( ), this, CALLERS);
+			this.SUPER_TYPE =
+			(
+				typeOf(RAW_TYPE.getGenericSuperclass( ), this, CALLERS)
+			);
 			
-			final Type[ ] GENERIC_INTERFACES = RAW_TYPE.getGenericInterfaces( );
+			final Type[ ] GENERIC_INTERFACES =
+			(
+				RAW_TYPE.getGenericInterfaces( )
+			);
 			
 			if (GENERIC_INTERFACES.length == 0)
 			{
@@ -1103,6 +1109,55 @@ public class TypeToken<T>
 		}
 		
 		return constructors;
+	}
+	
+	public boolean isAssignableFrom(final TypeToken<?> THAT)
+	{
+		if (THAT == null)
+		{
+			return false;
+		}
+		
+		if (RAW_TYPE.isAssignableFrom(THAT.getRawType( )))
+		{
+			final Set<Entry<TypeVariable<?>, TypeToken<?>>> ENTRIES =
+			(
+				TYPE_ARGUMENTS.entrySet( )
+			);
+			
+			for (final Entry<TypeVariable<?>, TypeToken<?>> ENTRY : ENTRIES)
+			{
+				final TypeToken<?> THIS_TYPE_ARGUMENT =
+				(
+					ENTRY.getValue( )
+				);
+				
+				final TypeToken<?> THAT_TYPE_ARGUMENT =
+				(
+					THAT.getTypeArgument(ENTRY.getKey( ))
+				);
+				
+				if (THIS_TYPE_ARGUMENT.isAssignableFrom(THAT_TYPE_ARGUMENT))
+				{
+					continue;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	public boolean isInstance(final Object INSTANCE)
+	{
+		return this.isAssignableFrom(typeOf(INSTANCE));
 	}
 	
 	@Override
