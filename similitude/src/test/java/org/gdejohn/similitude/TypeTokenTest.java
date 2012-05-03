@@ -11,6 +11,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.fail;
 
 import java.lang.reflect.Constructor;
@@ -545,7 +546,7 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			TypeToken<Bar> bar = typeOf(Bar.class);
 			TypeToken<?> foo = bar.getSuperType( );
@@ -572,7 +573,7 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			TypeVariable<?> E = Foo.class.getTypeParameters( )[0];
 			TypeVariable<?> F = Foo.class.getTypeParameters( )[1];
@@ -621,14 +622,14 @@ public class TypeTokenTest
 	
 	interface IFourth extends ISecond { }
 	
-	// @Test
+	@Test
 	public static void nonGenericInterfaces( )
 	{
 		class Impl implements IThird, IFourth { }
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			TypeToken<Impl> token = typeOf(Impl.class);
 			
@@ -655,6 +656,46 @@ public class TypeTokenTest
 			
 			assertEquals(iterator.next( ).getRawType( ), ISecond.class);
 			assertFalse(iterator.hasNext( ));
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	enum EnumType { }
+	
+	@Test
+	public static void enumType( )
+	{
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeVariable<?> E = Enum.class.getTypeParameters( )[0];
+			
+			TypeToken<EnumType> token = typeOf(EnumType.class);
+			TypeToken<?> arg = token.getTypeArgument(E);
+			
+			assertEquals(arg, token);
+			assertSame(arg, token);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void recursiveGenericInterface( )
+	{
+		try
+		{
+			// ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeVariable<?> T = Comparable.class.getTypeParameters( )[0];
+			
+			assertEquals(typeOf(String.class).getTypeArgument(T).getRawType( ), String.class);
 		}
 		finally
 		{
