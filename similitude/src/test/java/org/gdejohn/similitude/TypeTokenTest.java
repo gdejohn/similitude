@@ -7,13 +7,7 @@ import static java.util.Arrays.asList;
 import static org.gdejohn.similitude.TypeToken.typeOf;
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static org.slf4j.LoggerFactory.getLogger;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -22,6 +16,8 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,13 +28,12 @@ import ch.qos.logback.classic.Logger;
 @SuppressWarnings("javadoc")
 public class TypeTokenTest
 {
-	private static final Logger ROOT_LOGGER =
-	(
-		(Logger)getLogger(ROOT_LOGGER_NAME)
-	);
+	private static final Logger ROOT_LOGGER;
 	
 	static
 	{
+		ROOT_LOGGER = (Logger)getLogger(ROOT_LOGGER_NAME);
+		
 		ROOT_LOGGER.setLevel(WARN);
 	}
 	
@@ -133,6 +128,24 @@ public class TypeTokenTest
 			assertNotEquals(baz, foo);
 			assertNotEquals(bar, baz);
 			assertNotEquals(baz, bar);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void array( )
+	{
+		try
+		{
+			// ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<? extends String[ ]> token = typeOf(new String[ ] {"foo", "bar", "baz"});
+			
+			assertEquals(token.getRawType( ), String[ ].class);
+			assertEquals(token.toString( ), "String[]");
 		}
 		finally
 		{
@@ -742,7 +755,7 @@ public class TypeTokenTest
 		
 		try
 		{
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
 			TypeToken<Comparable<CharSequence>> comparableCharSequence = new TypeToken<Comparable<CharSequence>>( ) { };
 			TypeToken<Comparable<Number>> comparableNumber = new TypeToken<Comparable<Number>>( ) { };
@@ -751,6 +764,36 @@ public class TypeTokenTest
 			
 			assertTrue(comparableCharSequence.isInstance(instance));
 			assertFalse(comparableNumber.isInstance(instance));
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void instanceOfRecursivelyDefinedType( )
+	{
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		class Baz extends Foo { }
+		
+		try
+		{
+			ROOT_LOGGER.setLevel(DEBUG);
+			
+			LinkedList<Foo> list = new LinkedList<Foo>( );
+			
+			list.add(new Bar( ));
+			list.add(new Baz( ));
+
+			TypeToken<List<Foo>> fooList = new TypeToken<List<Foo>>( ) { };
+			TypeToken<List<Bar>> barList = new TypeToken<List<Bar>>( ) { };
+
+			assertTrue(fooList.isInstance(list));
+			assertFalse(barList.isInstance(list));
 		}
 		finally
 		{

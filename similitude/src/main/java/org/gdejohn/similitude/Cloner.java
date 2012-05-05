@@ -29,11 +29,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 
 /**
- * Deep copy instances of arbitrary classes.
+ * Deep copy instances of arbitrary types.
  * 
  * @author Griffin DeJohn
  */
-@SuppressWarnings("javadoc")
 public final class Cloner
 {
 	static final Logger LOGGER = getLogger(Cloner.class);
@@ -137,6 +136,13 @@ public final class Cloner
 		return unmodifiableSet(IMMUTABLE_TYPES);
 	}
 	
+	/**
+	 * Checks if a given type is registered as immutable.
+	 * 
+	 * @param TYPE The type to check.
+	 * 
+	 * @return {@code true} if {@code TYPE} is registered as immutable, else {@code false}.
+	 */
 	public boolean isImmutable(final TypeToken<?> TYPE)
 	{
 		return IMMUTABLE_TYPES.contains(TYPE);
@@ -190,10 +196,12 @@ public final class Cloner
 	 * The type must be immutable, or any resulting clone that relies on it
 	 * isn't guaranteed to be a true deep copy.
 	 * 
+	 * @param <T> The type represented by {@code TYPE}.
+	 * @param <U> The type of {@code VALUE}, either {@code T} or a subtype of {@code T}.
 	 * @param TYPE The type to register as immutable.
-	 * @param VALUE The value to map {@code TYPE} to.
+	 * @param VALUE The default value to map {@code TYPE} to.
 	 * 
-	 * @return {@code true} if {@code TYPE} wasn't already registered.
+	 * @return {@code true} if {@code TYPE} wasn't already registered, else {@code false}.
 	 * 
 	 * @throws IllegalArgumentException If {@code TYPE} is an array type.
 	 */
@@ -204,6 +212,13 @@ public final class Cloner
 		return IMMUTABLE_TYPES.add(TYPE);
 	}
 	
+	/**
+	 * Unregisters a given type as immutable.
+	 * 
+	 * @param TYPE The type to unregister as immutable.
+	 * 
+	 * @return {@code true} if {@code TYPE} was registered, else {@code false}.
+	 */
 	public boolean unregister(final TypeToken<?> TYPE)
 	{
 		BUILDER.removeDefault(TYPE);
@@ -490,9 +505,13 @@ public final class Cloner
 	}
 	
 	/**
-	 * Creates a deep copy of the given object.
+	 * Clones a given object.
 	 * 
-	 * @param ORIGINAL The object to create a deep copy of.
+	 * The resulting clone is a deep copy of the given object. They will be
+	 * equal to each other, and changes to one will not affect the other.
+	 * 
+	 * @param <T> The type of the object to clone.
+	 * @param ORIGINAL The object to clone.
 	 * 
 	 * @return A deep copy of {@code ORIGINAL}.
 	 * 

@@ -55,11 +55,11 @@ function toggleAllBoxes() {
 <body>
 <h2 align='center'>Default test</h2><table border='1' align="center">
 <tr>
-<td>Tests passed/Failed/Skipped:</td><td>20/0/0</td>
+<td>Tests passed/Failed/Skipped:</td><td>0/1/0</td>
 </tr><tr>
-<td>Started on:</td><td>Thu May 03 14:00:43 MDT 2012</td>
+<td>Started on:</td><td>Sat May 05 10:51:34 MDT 2012</td>
 </tr>
-<tr><td>Total time:</td><td>0 seconds (167 ms)</td>
+<tr><td>Total time:</td><td>0 seconds (85 ms)</td>
 </tr><tr>
 <td>Included groups:</td><td></td>
 </tr><tr>
@@ -67,113 +67,79 @@ function toggleAllBoxes() {
 </tr>
 </table><p/>
 <small><i>(Hover the method name to see the test class name)</i></small><p/>
-<table width='100%' border='1' class='invocation-passed'>
-<tr><td colspan='4' align='center'><b>PASSED TESTS</b></td></tr>
+<table width='100%' border='1' class='invocation-failed'>
+<tr><td colspan='4' align='center'><b>FAILED TESTS</b></td></tr>
 <tr><td><b>Test method</b></td>
 <td width="30%"><b>Exception</b></td>
 <td width="10%"><b>Time (seconds)</b></td>
 <td><b>Instance</b></td>
 </tr>
 <tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.enumType()'><b>enumType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
+<td title='org.gdejohn.similitude.TypeTokenTest.instanceOfRecursivelyDefinedType()'><b>instanceOfRecursivelyDefinedType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
+<td><div><pre>java.lang.AssertionError: expected:&lt;false&gt; but was:&lt;true&gt;
+	at org.testng.Assert.fail(Assert.java:89)
+	at org.testng.Assert.failNotEquals(Assert.java:489)
+	at org.testng.Assert.assertFalse(Assert.java:58)
+	at org.testng.Assert.assertFalse(Assert.java:68)
+	at org.gdejohn.similitude.TypeTokenTest.instanceOfRecursivelyDefinedType(TypeTokenTest.java:796)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.testng.internal.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:80)
+	at org.testng.internal.Invoker.invokeMethod(Invoker.java:702)
+	at org.testng.internal.Invoker.invokeTestMethod(Invoker.java:894)
+	at org.testng.internal.Invoker.invokeTestMethods(Invoker.java:1219)
+	at org.testng.internal.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:127)
+	at org.testng.internal.TestMethodWorker.run(TestMethodWorker.java:111)
+	at org.testng.TestRunner.privateRun(TestRunner.java:768)
+	at org.testng.TestRunner.run(TestRunner.java:617)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:334)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:329)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:291)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:240)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:53)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:87)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1185)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1110)
+	at org.testng.TestNG.run(TestNG.java:1022)
+	at org.testng.remote.RemoteTestNG.run(RemoteTestNG.java:109)
+	at org.testng.remote.RemoteTestNG.initAndRun(RemoteTestNG.java:202)
+	at org.testng.remote.RemoteTestNG.main(RemoteTestNG.java:173)
+</pre></div><a href='#' onClick='toggleBox("stack-trace20248218", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace20248218'><pre>java.lang.AssertionError: expected:&lt;false&gt; but was:&lt;true&gt;
+	at org.testng.Assert.fail(Assert.java:89)
+	at org.testng.Assert.failNotEquals(Assert.java:489)
+	at org.testng.Assert.assertFalse(Assert.java:58)
+	at org.testng.Assert.assertFalse(Assert.java:68)
+	at org.gdejohn.similitude.TypeTokenTest.instanceOfRecursivelyDefinedType(TypeTokenTest.java:796)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.testng.internal.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:80)
+	at org.testng.internal.Invoker.invokeMethod(Invoker.java:702)
+	at org.testng.internal.Invoker.invokeTestMethod(Invoker.java:894)
+	at org.testng.internal.Invoker.invokeTestMethods(Invoker.java:1219)
+	at org.testng.internal.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:127)
+	at org.testng.internal.TestMethodWorker.run(TestMethodWorker.java:111)
+	at org.testng.TestRunner.privateRun(TestRunner.java:768)
+	at org.testng.TestRunner.run(TestRunner.java:617)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:334)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:329)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:291)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:240)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:53)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:87)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1185)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1110)
+	at org.testng.TestNG.run(TestNG.java:1022)
+	at org.testng.remote.RemoteTestNG.run(RemoteTestNG.java:109)
+	at org.testng.remote.RemoteTestNG.initAndRun(RemoteTestNG.java:202)
+	at org.testng.remote.RemoteTestNG.main(RemoteTestNG.java:173)
+</pre></div></td>
 <td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.genericArrayType()'><b>genericArrayType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.genericEnclosingType()'><b>genericEnclosingType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.genericMethodReturnType()'><b>genericMethodReturnType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.genericSuperType()'><b>genericSuperType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.inheritedFields()'><b>inheritedFields</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.instanceOfGenericType()'><b>instanceOfGenericType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.instanceOfNonGenericType()'><b>instanceOfNonGenericType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.instanceOfTopLevelGenericType()'><b>instanceOfTopLevelGenericType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.nonGenericEquality()'><b>nonGenericEquality</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.nonGenericInterfaces()'><b>nonGenericInterfaces</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.nonGenericObject()'><b>nonGenericObject</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.nonGenericSuperType()'><b>nonGenericSuperType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.nonGenericType()'><b>nonGenericType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.nonGenericTypeToString()'><b>nonGenericTypeToString</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.parameterizedType()'><b>parameterizedType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.privateConstructor()'><b>privateConstructor</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.recursiveGenericInterface()'><b>recursiveGenericInterface</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.superTypeToken()'><b>superTypeToken</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
-<tr>
-<td title='org.gdejohn.similitude.TypeTokenTest.wildcardType()'><b>wildcardType</b><br>Test class: org.gdejohn.similitude.TypeTokenTest</td>
-<td></td>
-<td>0</td>
-<td>org.gdejohn.similitude.TypeTokenTest@95c083</td></tr>
+<td>org.gdejohn.similitude.TypeTokenTest@2d9c06</td></tr>
 </table><p>
 </body>
 </html>

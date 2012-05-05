@@ -24,7 +24,6 @@ import org.slf4j.Logger;
  * 
  * @author Griffin DeJohn
  */
-@SuppressWarnings("javadoc")
 public final class Builder
 {
 	static final Logger LOGGER = getLogger(Builder.class);
@@ -104,7 +103,7 @@ public final class Builder
 	 * 
 	 * @return The wrapper corresponding to {@code PRIMITIVE}.
 	 */
-	private static <T> TypeToken<T>	getWrapper(final TypeToken<T> PRIMITIVE)
+	static <T> TypeToken<T>	getWrapper(final TypeToken<T> PRIMITIVE)
 	{
 		/*
 		 * Mappings are only added to WRAPPERS if they would allow this cast to
@@ -140,6 +139,8 @@ public final class Builder
 	}
 	
 	/**
+	 * Gets a read-only view of {@code this} builder's immutable defaults.
+	 * 
 	 * @return A read-only view of {@code this} builder's immutable defaults.
 	 */
 	public Map<TypeToken<?>, Object> getAllDefaults( )
@@ -147,7 +148,14 @@ public final class Builder
 		return unmodifiableMap(IMMUTABLE_DEFAULTS);
 	}
 	
-	public <T> boolean hasDefault(final TypeToken<T> TYPE)
+	/**
+	 * Checks if a given type is associated with a default value.
+	 * 
+	 * @param TYPE The type to check.
+	 * 
+	 * @return {@code true} if {@code TYPE} is associated with a default value, else {@code false}.
+	 */
+	public boolean hasDefault(final TypeToken<?> TYPE)
 	{
 		return IMMUTABLE_DEFAULTS.containsKey(TYPE);
 	}
@@ -159,7 +167,8 @@ public final class Builder
 	 * #addDefault}, or {@code null} will be returned. Primitive types aren't
 	 * actually mapped. Instead, the default values of their corresponding
 	 * wrapper types are used.
-	 *
+	 * 
+	 * @param <T> The type represented by {@code TYPE}.
 	 * @param TYPE The type for which to get the default value.
 	 *
 	 * @return Default value associated with {@code TYPE}, or {@code null}.
@@ -185,6 +194,8 @@ public final class Builder
 	 * use the default values of their corresponding wrappers and cannot
 	 * themselves be mapped. Attempting to do so will throw an exception.
 	 * 
+	 * @param <T> The type represented by {@code TYPE}.
+	 * @param <V> The type of {@code VALUE}, either {@code T} or a subtype of {@code T}.
 	 * @param TYPE The immutable type.
 	 * @param VALUE The default value for {@code TYPE}.
 	 * 
@@ -223,6 +234,13 @@ public final class Builder
 		}
 	}
 	
+	/**
+	 * Removes the mapping for a given type to its associated default value.
+	 * 
+	 * @param TYPE The type to remove the mapping to a default value for.
+	 * 
+	 * @return The default value to which {@code TYPE} was mapped, if the mapping existed.
+	 */
 	public Object removeDefault(final TypeToken<?> TYPE)
 	{
 		return IMMUTABLE_DEFAULTS.remove(TYPE);
@@ -254,10 +272,11 @@ public final class Builder
 	}
 	
 	/**
-	 * Creates an instance of the given type, which may be parameterized.
+	 * Creates an instance of the given type.
 	 * 
 	 * {@link #instantiate(Class)} delegates to this method.
 	 * 
+	 * @param <T> The type represented by {@code TYPE}.
 	 * @param TYPE The type to instantiate.
 	 * 
 	 * @return An instance of {@code TYPE}.
@@ -545,9 +564,10 @@ public final class Builder
 	 * occurs, an {@code InstantiationFailedException} wrapping it is thrown to
 	 * the caller. If instantiation fails simply because a working constructor
 	 * couldn't be found, the problems that were encountered are detailed in
-	 * logging messages. See {@link "http://www.slf4j.org/codes.html#StaticLoggerBinder"}
+	 * logging messages. See <a href="http://www.slf4j.org/codes.html#StaticLoggerBinder">slf4j.org</a>
 	 * for instructions on how to enable logging.
 	 * 
+	 * @param <T> The type represented by {@code CLASS}.
 	 * @param CLASS The class to instantiate.
 	 * 
 	 * @return An instance of {@code TYPE}.
