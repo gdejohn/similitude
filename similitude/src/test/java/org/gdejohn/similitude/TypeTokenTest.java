@@ -772,7 +772,7 @@ public class TypeTokenTest
 	}
 	
 	@Test
-	public static void instanceOfRecursivelyDefinedType( )
+	public static void commonSuperType( )
 	{
 		class Foo { }
 		
@@ -782,18 +782,136 @@ public class TypeTokenTest
 		
 		try
 		{
+			// ROOT_LOGGER.setLevel(DEBUG);
+			
+			TypeToken<Foo> foo = typeOf(Foo.class);
+			TypeToken<Bar> bar = typeOf(Bar.class);
+			TypeToken<Baz> baz = typeOf(Baz.class);
+
+			assertEquals(foo.getCommonSuperType(foo), foo);
+			assertEquals(foo.getCommonSuperType(bar), foo);
+			assertEquals(bar.getCommonSuperType(baz), foo);
+			assertEquals(baz.getCommonSuperType(bar), foo);
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void multipleParameterizations( )
+	{
+		@SuppressWarnings("unused")
+		class Clazz<C>
+		{
+			C first;
+			
+			C second;
+			
+			Clazz(C first, C second)
+			{
+				this.first = first;
+				
+				this.second = second;
+			}
+		}
+		
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		class Baz extends Foo { }
+		
+		try
+		{
+			// ROOT_LOGGER.setLevel(DEBUG);
+			
+			Clazz<Foo> list = new Clazz<Foo>(new Bar( ), new Baz( ));
+			
+			TypeToken<Clazz<Foo>> fooClazz = new TypeToken<Clazz<Foo>>( ) { };
+			TypeToken<Clazz<Bar>> barClazz = new TypeToken<Clazz<Bar>>( ) { };
+			TypeToken<Clazz<Baz>> bazClazz = new TypeToken<Clazz<Baz>>( ) { };
+			
+			assertTrue(fooClazz.isInstance(list));
+			assertFalse(barClazz.isInstance(list));
+			assertFalse(bazClazz.isInstance(list));
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void instanceOfRecursivelyDefinedType( )
+	{
+		@SuppressWarnings("unused")
+		class Recursive<R>
+		{
+			R data;
+			
+			Recursive<? extends R> next;
+			
+			Recursive(R data, Recursive<? extends R> next)
+			{
+				this.data = data;
+				
+				this.next = next;
+			}
+		}
+		
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		class Baz extends Foo { }
+		
+		try
+		{
+			TypeToken<Recursive<Foo>> foo = new TypeToken<Recursive<Foo>>( ) { };
+			TypeToken<Recursive<Bar>> bar = new TypeToken<Recursive<Bar>>( ) { };
+			TypeToken<Recursive<Baz>> baz = new TypeToken<Recursive<Baz>>( ) { };
+			
+			// ROOT_LOGGER.setLevel(DEBUG);
+			
+			Recursive<Foo> object = new Recursive<Foo>(new Bar( ), new Recursive<Baz>(new Baz( ), null));
+			
+			assertTrue(foo.isInstance(object));
+			assertFalse(bar.isInstance(object));
+			assertFalse(baz.isInstance(object));
+		}
+		finally
+		{
+			ROOT_LOGGER.setLevel(WARN);
+		}
+	}
+	
+	@Test
+	public static void linkedList( )
+	{
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		class Baz extends Foo { }
+		
+		try
+		{
+			TypeToken<List<Foo>> fooList = new TypeToken<List<Foo>>( ) { };
+			TypeToken<List<Bar>> barList = new TypeToken<List<Bar>>( ) { };
+			TypeToken<List<Baz>> bazList = new TypeToken<List<Baz>>( ) { };
+			
 			ROOT_LOGGER.setLevel(DEBUG);
 			
 			LinkedList<Foo> list = new LinkedList<Foo>( );
 			
 			list.add(new Bar( ));
 			list.add(new Baz( ));
-
-			TypeToken<List<Foo>> fooList = new TypeToken<List<Foo>>( ) { };
-			TypeToken<List<Bar>> barList = new TypeToken<List<Bar>>( ) { };
-
+			
 			assertTrue(fooList.isInstance(list));
 			assertFalse(barList.isInstance(list));
+			assertFalse(bazList.isInstance(list));
 		}
 		finally
 		{

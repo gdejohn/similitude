@@ -23,7 +23,7 @@
     <div class="top-banner-root">
       <span class="top-banner-title-font">Test results</span>
       <br/>
-      <span class="top-banner-font-1">1 suite, 1 failed test</span>
+      <span class="top-banner-font-1">1 suite</span>
     </div> <!-- top-banner-root -->
     <div class="navigator-root">
       <div class="navigator-suite-header">
@@ -37,7 +37,7 @@
         <div class="rounded-window">
           <div class="suite-header light-rounded-window-top">
             <a href="#" class="navigator-link" panel-name="suite-Default_suite">
-              <span class="suite-name border-failed">Default suite</span>
+              <span class="suite-name border-passed">Default suite</span>
             </a> <!-- navigator-link -->
           </div> <!-- suite-header light-rounded-window-top -->
           <div class="navigator-suite-content">
@@ -48,7 +48,7 @@
               <ul>
                 <li>
                   <a href="#" class="navigator-link " panel-name="test-xml-Default_suite">
-                    <span>C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--1320744926\testng-customsuite.xml</span>
+                    <span>C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--689493371\testng-customsuite.xml</span>
                   </a> <!-- navigator-link  -->
                 </li>
                 <li>
@@ -90,21 +90,51 @@
               <div class="suite-section-content">
                 <ul>
                   <li>
-                    <span class="method-stats">1 method, 1 failed,   </span>
+                    <span class="method-stats">7 methods,   7 passed</span>
                   </li>
                   <li>
-                    <span class="method-list-title failed">Failed methods</span>
-                    <span class="show-or-hide-methods failed">
-                      <a href="#" panel-name="suite-Default_suite" class="hide-methods failed suite-Default_suite"> (hide)</a> <!-- hide-methods failed suite-Default_suite -->
-                      <a href="#" panel-name="suite-Default_suite" class="show-methods failed suite-Default_suite"> (show)</a> <!-- show-methods failed suite-Default_suite -->
+                    <span class="method-list-title passed">Passed methods</span>
+                    <span class="show-or-hide-methods passed">
+                      <a href="#" panel-name="suite-Default_suite" class="hide-methods passed suite-Default_suite"> (hide)</a> <!-- hide-methods passed suite-Default_suite -->
+                      <a href="#" panel-name="suite-Default_suite" class="show-methods passed suite-Default_suite"> (show)</a> <!-- show-methods passed suite-Default_suite -->
                     </span>
-                    <div class="method-list-content failed suite-Default_suite">
+                    <div class="method-list-content passed suite-Default_suite">
                       <span>
-                        <img width="3%" src="failed.png"/>
-                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.TypeTokenTest" hash-for-method="instanceOfRecursivelyDefinedType">instanceOfRecursivelyDefinedType</a> <!-- method navigator-link -->
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.ClonerTest" hash-for-method="baseCases">baseCases</a> <!-- method navigator-link -->
                       </span>
                       <br/>
-                    </div> <!-- method-list-content failed suite-Default_suite -->
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.ClonerTest" hash-for-method="covariantArrays">covariantArrays</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.ClonerTest" hash-for-method="enumType">enumType</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.ClonerTest" hash-for-method="multidimensionalArray">multidimensionalArray</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.ClonerTest" hash-for-method="primitiveArray">primitiveArray</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.ClonerTest" hash-for-method="selfReferentialArray">selfReferentialArray</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Default_suite" title="org.gdejohn.similitude.ClonerTest" hash-for-method="stringBuilder">stringBuilder</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                    </div> <!-- method-list-content passed suite-Default_suite -->
                   </li>
                 </ul>
               </div> <!-- suite-section-content -->
@@ -116,27 +146,67 @@
     <div class="wrapper">
       <div class="main-panel-root">
         <div panel-name="suite-Default_suite" class="panel Default_suite">
-          <div class="suite-Default_suite-class-failed">
+          <div class="suite-Default_suite-class-passed">
             <div class="main-panel-header rounded-window-top">
-              <img src="failed.png"/>
-              <span class="class-name">org.gdejohn.similitude.TypeTokenTest</span>
+              <img src="passed.png"/>
+              <span class="class-name">org.gdejohn.similitude.ClonerTest</span>
             </div> <!-- main-panel-header rounded-window-top -->
             <div class="main-panel-content rounded-window-bottom">
               <div class="method">
                 <div class="method-content">
-                  <a name="instanceOfRecursivelyDefinedType">
-                  </a> <!-- instanceOfRecursivelyDefinedType -->
-                  <span class="method-name">instanceOfRecursivelyDefinedType</span>
-                  <div class="stack-trace"><b>"expected:<false> but was:<true>"</b><br>org.testng.Assert.fail(Assert.java:89)<br>org.testng.Assert.failNotEquals(Assert.java:489)<br>org.testng.Assert.assertFalse(Assert.java:58)<br>org.testng.Assert.assertFalse(Assert.java:68)<br>org.gdejohn.similitude.TypeTokenTest.instanceOfRecursivelyDefinedType(TypeTokenTest.java:796)<br>sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)<br>sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)<br>sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)<br>java.lang.reflect.Method.invoke(Unknown Source)<br>org.testng.internal.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:80)<br>org.testng.internal.Invoker.invokeMethod(Invoker.java:702)<br>org.testng.internal.Invoker.invokeTestMethod(Invoker.java:894)<br>org.testng.internal.Invoker.invokeTestMethods(Invoker.java:1219)<br>org.testng.internal.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:127)<br>org.testng.internal.TestMethodWorker.run(TestMethodWorker.java:111)<br>org.testng.TestRunner.privateRun(TestRunner.java:768)<br>org.testng.TestRunner.run(TestRunner.java:617)<br>org.testng.SuiteRunner.runTest(SuiteRunner.java:334)<br>org.testng.SuiteRunner.runSequentially(SuiteRunner.java:329)<br>org.testng.SuiteRunner.privateRun(SuiteRunner.java:291)<br>org.testng.SuiteRunner.run(SuiteRunner.java:240)<br>org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:53)<br>org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:87)<br>org.testng.TestNG.runSuitesSequentially(TestNG.java:1185)<br>org.testng.TestNG.runSuitesLocally(TestNG.java:1110)<br>org.testng.TestNG.run(TestNG.java:1022)<br>org.testng.remote.RemoteTestNG.run(RemoteTestNG.java:109)<br>org.testng.remote.RemoteTestNG.initAndRun(RemoteTestNG.java:202)<br>org.testng.remote.RemoteTestNG.main(RemoteTestNG.java:173)<br>
-</div> <!-- stack-trace -->
+                  <a name="baseCases">
+                  </a> <!-- baseCases -->
+                  <span class="method-name">baseCases</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="covariantArrays">
+                  </a> <!-- covariantArrays -->
+                  <span class="method-name">covariantArrays</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="enumType">
+                  </a> <!-- enumType -->
+                  <span class="method-name">enumType</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="multidimensionalArray">
+                  </a> <!-- multidimensionalArray -->
+                  <span class="method-name">multidimensionalArray</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="primitiveArray">
+                  </a> <!-- primitiveArray -->
+                  <span class="method-name">primitiveArray</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="selfReferentialArray">
+                  </a> <!-- selfReferentialArray -->
+                  <span class="method-name">selfReferentialArray</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="stringBuilder">
+                  </a> <!-- stringBuilder -->
+                  <span class="method-name">stringBuilder</span>
                 </div> <!-- method-content -->
               </div> <!-- method -->
             </div> <!-- main-panel-content rounded-window-bottom -->
-          </div> <!-- suite-Default_suite-class-failed -->
+          </div> <!-- suite-Default_suite-class-passed -->
         </div> <!-- panel Default_suite -->
         <div panel-name="test-xml-Default_suite" class="panel">
           <div class="main-panel-header rounded-window-top">
-            <span class="header-content">C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--1320744926\testng-customsuite.xml</span>
+            <span class="header-content">C:\Users\gdejohn\AppData\Local\Temp\testng-eclipse--689493371\testng-customsuite.xml</span>
           </div> <!-- main-panel-header rounded-window-top -->
           <div class="main-panel-content rounded-window-bottom">
             <pre>
@@ -145,11 +215,7 @@
 &lt;suite name=&quot;Default suite&quot;&gt;
   &lt;test verbose=&quot;2&quot; name=&quot;Default test&quot; preserve-order=&quot;true&quot;&gt;
     &lt;classes&gt;
-      &lt;class name=&quot;org.gdejohn.similitude.TypeTokenTest&quot;&gt;
-        &lt;methods&gt;
-          &lt;include name=&quot;instanceOfRecursivelyDefinedType&quot;/&gt;
-        &lt;/methods&gt;
-      &lt;/class&gt; &lt;!-- org.gdejohn.similitude.TypeTokenTest --&gt;
+      &lt;class name=&quot;org.gdejohn.similitude.ClonerTest&quot;/&gt;
     &lt;/classes&gt;
   &lt;/test&gt; &lt;!-- Default test --&gt;
 &lt;/suite&gt; &lt;!-- Default suite --&gt;
@@ -189,16 +255,40 @@ data.addColumn('number', 'Number');
 data.addColumn('string', 'Method');
 data.addColumn('string', 'Class');
 data.addColumn('number', 'Time (ms)');
-data.addRows(1);
+data.addRows(7);
 data.setCell(0, 0, 0)
-data.setCell(0, 1, 'instanceOfRecursivelyDefinedType')
-data.setCell(0, 2, 'org.gdejohn.similitude.TypeTokenTest')
-data.setCell(0, 3, 62);
+data.setCell(0, 1, 'baseCases')
+data.setCell(0, 2, 'org.gdejohn.similitude.ClonerTest')
+data.setCell(0, 3, 73);
+data.setCell(1, 0, 1)
+data.setCell(1, 1, 'covariantArrays')
+data.setCell(1, 2, 'org.gdejohn.similitude.ClonerTest')
+data.setCell(1, 3, 30);
+data.setCell(2, 0, 2)
+data.setCell(2, 1, 'stringBuilder')
+data.setCell(2, 2, 'org.gdejohn.similitude.ClonerTest')
+data.setCell(2, 3, 7);
+data.setCell(3, 0, 3)
+data.setCell(3, 1, 'multidimensionalArray')
+data.setCell(3, 2, 'org.gdejohn.similitude.ClonerTest')
+data.setCell(3, 3, 4);
+data.setCell(4, 0, 4)
+data.setCell(4, 1, 'enumType')
+data.setCell(4, 2, 'org.gdejohn.similitude.ClonerTest')
+data.setCell(4, 3, 2);
+data.setCell(5, 0, 5)
+data.setCell(5, 1, 'primitiveArray')
+data.setCell(5, 2, 'org.gdejohn.similitude.ClonerTest')
+data.setCell(5, 3, 2);
+data.setCell(6, 0, 6)
+data.setCell(6, 1, 'selfReferentialArray')
+data.setCell(6, 2, 'org.gdejohn.similitude.ClonerTest')
+data.setCell(6, 3, 2);
 window.suiteTableData['Default_suite']= { tableData: data, tableDiv: 'times-div-Default_suite'}
 return data;
 }
               </script>
-              <span class="suite-total-time">Total running time: 62 ms</span>
+              <span class="suite-total-time">Total running time: 120 ms</span>
               <div id="times-div-Default_suite">
               </div> <!-- times-div-Default_suite -->
             </div> <!-- times-div -->
@@ -213,56 +303,9 @@ return data;
         </div> <!-- panel -->
         <div panel-name="ignored-methods-Default_suite" class="panel">
           <div class="main-panel-header rounded-window-top">
-            <span class="header-content">21 ignored methods</span>
+            <span class="header-content">0 ignored methods</span>
           </div> <!-- main-panel-header rounded-window-top -->
           <div class="main-panel-content rounded-window-bottom">
-            <div class="ignored-class-div">
-              <span class="ignored-class-name">org.gdejohn.similitude.TypeTokenTest</span>
-              <div class="ignored-methods-div">
-                <span class="ignored-method-name">parameterizedType</span>
-                <br/>
-                <span class="ignored-method-name">superTypeToken</span>
-                <br/>
-                <span class="ignored-method-name">genericMethodReturnType</span>
-                <br/>
-                <span class="ignored-method-name">nonGenericEquality</span>
-                <br/>
-                <span class="ignored-method-name">nonGenericObject</span>
-                <br/>
-                <span class="ignored-method-name">wildcardType</span>
-                <br/>
-                <span class="ignored-method-name">recursiveGenericInterface</span>
-                <br/>
-                <span class="ignored-method-name">genericArrayType</span>
-                <br/>
-                <span class="ignored-method-name">nonGenericSuperType</span>
-                <br/>
-                <span class="ignored-method-name">array</span>
-                <br/>
-                <span class="ignored-method-name">privateConstructor</span>
-                <br/>
-                <span class="ignored-method-name">inheritedFields</span>
-                <br/>
-                <span class="ignored-method-name">nonGenericInterfaces</span>
-                <br/>
-                <span class="ignored-method-name">instanceOfGenericType</span>
-                <br/>
-                <span class="ignored-method-name">instanceOfTopLevelGenericType</span>
-                <br/>
-                <span class="ignored-method-name">enumType</span>
-                <br/>
-                <span class="ignored-method-name">nonGenericTypeToString</span>
-                <br/>
-                <span class="ignored-method-name">nonGenericType</span>
-                <br/>
-                <span class="ignored-method-name">genericEnclosingType</span>
-                <br/>
-                <span class="ignored-method-name">instanceOfNonGenericType</span>
-                <br/>
-                <span class="ignored-method-name">genericSuperType</span>
-                <br/>
-              </div> <!-- ignored-methods-div -->
-            </div> <!-- ignored-class-div -->
           </div> <!-- main-panel-content rounded-window-bottom -->
         </div> <!-- panel -->
         <div panel-name="chronological-Default_suite" class="panel">
@@ -271,12 +314,34 @@ return data;
           </div> <!-- main-panel-header rounded-window-top -->
           <div class="main-panel-content rounded-window-bottom">
             <div class="chronological-class">
-              <div class="chronological-class-name">org.gdejohn.similitude.TypeTokenTest</div> <!-- chronological-class-name -->
+              <div class="chronological-class-name">org.gdejohn.similitude.ClonerTest</div> <!-- chronological-class-name -->
               <div class="test-method">
-                <img src="failed.png">
-                </img>
-                <span class="method-name">instanceOfRecursivelyDefinedType</span>
+                <span class="method-name">baseCases</span>
                 <span class="method-start">0 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">covariantArrays</span>
+                <span class="method-start">75 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">enumType</span>
+                <span class="method-start">106 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">multidimensionalArray</span>
+                <span class="method-start">109 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">primitiveArray</span>
+                <span class="method-start">114 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">selfReferentialArray</span>
+                <span class="method-start">117 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">stringBuilder</span>
+                <span class="method-start">119 ms</span>
               </div> <!-- test-method -->
           </div> <!-- main-panel-content rounded-window-bottom -->
         </div> <!-- panel -->

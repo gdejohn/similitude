@@ -12,6 +12,7 @@ import static org.gdejohn.similitude.TypeToken.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.LoggerFactory;
@@ -626,10 +627,18 @@ public class ClonerTest1
 		{
 			Cloner cloner = new Cloner( );
 			
-			ROOT_LOGGER.setLevel(DEBUG);
+			// ROOT_LOGGER.setLevel(DEBUG);
 			
-			List<String> original = Arrays.asList("foo", "bar", "baz");
+			List<String> original = new LinkedList<String>( );
+			
+			original.add("foo");
+			original.add("bar");
+			original.add("baz");
+			
 			List<String> clone = cloner.toClone(original);
+			
+			System.out.println(original);
+			System.out.println(clone);
 			
 			assertEquals(clone, original);
 			assertNotSame(clone, original);

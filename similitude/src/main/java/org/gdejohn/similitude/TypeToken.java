@@ -198,7 +198,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE, final Map<TypeToken<?>, TypeToken<?>> CALLERS, final IdentitySet SET)
 	{
 		final TypeVariable<Class<T>>[ ] TYPE_PARAMETERS =
 		(
@@ -224,12 +224,30 @@ public class TypeToken<T>
 				TYPE_ARGUMENTS.put
 				(
 					TYPE_VARIABLE,
-					typeOf(TYPE_VARIABLE, PARENT, PARAMETERIZATIONS, CALLERS)
+					typeOf
+					(
+						TYPE_VARIABLE, PARENT, PARAMETERIZATIONS, CALLERS, SET
+					)
 				);
 			}
 			
 			return typeOf(CLASS, TYPE_ARGUMENTS, ENCLOSING_TYPE, CALLERS);
 		}
+	}
+	
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
+	{
+		return
+		(
+			typeOf
+			(
+				CLASS, PARENT, 
+				PARAMETERIZATIONS,
+				ENCLOSING_TYPE,
+				CALLERS,
+				new IdentitySet( )
+			)
+		);
 	}
 	
 	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
@@ -297,10 +315,11 @@ public class TypeToken<T>
 	 * 
 	 * @param <T> The type of {@code OBJECT}.
 	 * @param OBJECT An instance of the type to model.
+	 * @param SET Previously encountered field values.
 	 * 
 	 * @return A {@code TypeToken} representing {@code T}.
 	 */
-	public static <T> TypeToken<? extends T> typeOf(final T OBJECT)
+	private static <T> TypeToken<? extends T> typeOf(final T OBJECT, final IdentitySet SET)
 	{
 		LOGGER.debug("Getting type of object: {}", OBJECT);
 		
@@ -412,7 +431,10 @@ public class TypeToken<T>
 		
 		if (ENCLOSING_CLASS == null)
 		{
-			return typeOf(RAW_TYPE, null, PARAMETERIZATIONS, null, CALLERS);
+			return
+			(
+				typeOf(RAW_TYPE, null, PARAMETERIZATIONS, null, CALLERS, SET)
+			);
 		}
 		else if (INSTANCE_FIELDS.size( ) > 1)
 		{
@@ -435,7 +457,11 @@ public class TypeToken<T>
 				{
 					final TypeToken<?> ENCLOSING_TYPE =
 					(
-						typeOf(INSTANCE_FIELDS.iterator( ).next( ).get(OBJECT))
+						typeOf
+						(
+							INSTANCE_FIELDS.iterator( ).next( ).get(OBJECT),
+							SET
+						)
 					);
 					
 					return
@@ -446,7 +472,8 @@ public class TypeToken<T>
 							null, // PARENT
 							PARAMETERIZATIONS,
 							ENCLOSING_TYPE,
-							CALLERS
+							CALLERS,
+							SET
 						)
 					);
 				}
@@ -468,10 +495,24 @@ public class TypeToken<T>
 					null, // PARENT
 					PARAMETERIZATIONS,
 					typeOf(ENCLOSING_CLASS, null, PARAMETERIZATIONS, CALLERS),
-					CALLERS
+					CALLERS,
+					SET
 				)
 			);
 		}
+	}
+	
+	/**
+	 * Models the runtime type of a given object.
+	 * 
+	 * @param <T> The type of {@code OBJECT}.
+	 * @param OBJECT An instance of the type to model.
+	 * 
+	 * @return A {@code TypeToken} representing {@code T}.
+	 */
+	public static <T> TypeToken<? extends T> typeOf(final T OBJECT)
+	{
+		return typeOf(OBJECT, new IdentitySet( ));
 	}
 	
 	private static TypeToken<?> typeOf(final WildcardType WILDCARD_TYPE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
@@ -639,8 +680,20 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
+	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS, final IdentitySet SET)
 	{
+		LOGGER.debug
+		(
+			"Getting type of type variable.\nType variable: {}\nParent: {}\nParameterizations: {}\nCallers: {}",
+			new Object[ ]
+			{
+				TYPE_VARIABLE,
+				PARENT,
+				PARAMETERIZATIONS,
+				CALLERS
+			}
+		);
+		
 		if (PARENT != null)
 		{
 			try
@@ -653,22 +706,10 @@ public class TypeToken<T>
 			}
 		}
 		
-		final List<Object> OBJECTS = PARAMETERIZATIONS.get(TYPE_VARIABLE);
-		
-		if (OBJECTS != null)
-		{
-			for (final Object OBJECT : OBJECTS)
-			{
-				try
-				{
-					return typeOf(OBJECT);
-				}
-				catch (final RuntimeException e)
-				{
-					continue;
-				}
-			}
-		}
+		final Set<TypeToken<?>> TYPE_ARGUMENTS =
+		(
+			new LinkedHashSet<TypeToken<?>>( )
+		);
 		
 		final Set<Entry<Type, List<Object>>> ENTRIES =
 		(
@@ -681,31 +722,74 @@ public class TypeToken<T>
 			{
 				try
 				{
-					final List<TypeVariable<?>> TRACE =
-					(
-						traceTypeVariable(ENTRY.getKey( ), TYPE_VARIABLE)
-					);
-					
-					TypeToken<?> typeArgument = typeOf(OBJECT);
-					
-					for (final TypeVariable<?> TYPE_PARAMETER : TRACE)
+					if (SET.add(OBJECT))
 					{
-						typeArgument =
+						final List<TypeVariable<?>> TRACE =
 						(
-							typeArgument.getTypeArgument(TYPE_PARAMETER)
+							traceTypeVariable(ENTRY.getKey( ), TYPE_VARIABLE)
 						);
+						
+						TypeToken<?> typeArgument = typeOf(OBJECT, SET);
+						
+						for (final TypeVariable<?> TYPE_PARAMETER : TRACE)
+						{
+							typeArgument =
+							(
+								typeArgument.getTypeArgument(TYPE_PARAMETER)
+							);
+						}
+						
+						if (typeArgument != null)
+						{
+							TYPE_ARGUMENTS.add(typeArgument);
+						}
 					}
-					
-					return typeArgument;
 				}
 				catch (final RuntimeException e)
 				{
-					continue;
+					LOGGER.debug("Problem resolving type argument.", e);
 				}
 			}
 		}
 		
-		throw new RuntimeException("Type argument couldn't be determined.");
+		if (TYPE_ARGUMENTS.isEmpty( ))
+		{
+			throw
+			(
+				new RuntimeException("Type argument couldn't be determined.")
+			);
+		}
+		else
+		{
+			final Iterator<TypeToken<?>> ITERATOR = TYPE_ARGUMENTS.iterator( );
+			
+			TypeToken<?> typeArgument = ITERATOR.next( );
+			
+			while (ITERATOR.hasNext( ))
+			{
+				typeArgument =
+				(
+					typeArgument.getCommonSuperType(ITERATOR.next( ))
+				);
+			}
+			
+			return typeArgument;
+		}
+	}
+	
+	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
+	{
+		return
+		(
+			typeOf
+			(
+				TYPE_VARIABLE,
+				PARENT,
+				PARAMETERIZATIONS,
+				CALLERS,
+				new IdentitySet( )
+			)
+		);
 	}
 	
 	private static TypeToken<?> typeOf(final Type TYPE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
@@ -1033,6 +1117,39 @@ public class TypeToken<T>
 	}
 	
 	/**
+	 * Gets the common super type of {@code this} and a given type.
+	 * 
+	 * @param THAT The type for which to get {@code this} type's common super type.
+	 * 
+	 * @return The most specific common super type of {@code this} type and {@code THAT}.
+	 */
+	public TypeToken<?> getCommonSuperType(final TypeToken<?> THAT)
+	{
+		if (this.isAssignableFrom(THAT))
+		{
+			return this;
+		}
+		else if (THAT.isAssignableFrom(this))
+		{
+			return THAT;
+		}
+		else
+		{
+			TypeToken<?> type = this;
+			
+			while (true)
+			{
+				type = type.getSuperType( );
+				
+				if (type.isAssignableFrom(THAT))
+				{
+					return type;
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Models the return type of a given method, which may be generic.
 	 * 
 	 * If the return type depends on the type argument to a type parameter
@@ -1345,7 +1462,7 @@ public class TypeToken<T>
 	 * 
 	 * @see java.lang.Class#isAssignableFrom(Class)
 	 */
-	public boolean isAssignableFrom(final TypeToken<?> THAT)
+	public final boolean isAssignableFrom(final TypeToken<?> THAT)
 	{
 		if (THAT == null)
 		{
@@ -1398,7 +1515,7 @@ public class TypeToken<T>
 	 * 
 	 * @see java.lang.Class#isInstance(Object)
 	 */
-	public boolean isInstance(final Object OBJECT)
+	public final boolean isInstance(final Object OBJECT)
 	{
 		return this.isAssignableFrom(typeOf(OBJECT));
 	}
@@ -1525,16 +1642,7 @@ public class TypeToken<T>
 				
 				while (true)
 				{
-					final TypeToken<?> ARGUMENT = ARGUMENTS.next( );
-					
-					if (ARGUMENT == null)
-					{
-						STRING_BUILDER.append('?');
-					}
-					else
-					{
-						STRING_BUILDER.append(ARGUMENT);
-					}
+					STRING_BUILDER.append(ARGUMENTS.next( ));
 					
 					if (ARGUMENTS.hasNext( ))
 					{ // Only append separator if there are more parameters.

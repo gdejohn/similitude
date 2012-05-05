@@ -1,53 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results skipped="0" failed="1" total="1" passed="0">
+<testng-results skipped="0" failed="0" total="7" passed="7">
   <reporter-output>
   </reporter-output>
-  <suite name="Default suite" duration-ms="85" started-at="2012-05-05T10:51:34Z" finished-at="2012-05-05T10:51:34Z">
+  <suite name="Default suite" duration-ms="146" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
     <groups>
     </groups>
-    <test name="Default test" duration-ms="85" started-at="2012-05-05T10:51:34Z" finished-at="2012-05-05T10:51:34Z">
-      <class name="org.gdejohn.similitude.TypeTokenTest">
-        <test-method status="FAIL" signature="instanceOfRecursivelyDefinedType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@2d9c06]" name="instanceOfRecursivelyDefinedType" duration-ms="62" started-at="2012-05-05T10:51:34Z" finished-at="2012-05-05T10:51:34Z">
-          <exception class="java.lang.AssertionError">
-            <message>
-              <![CDATA[expected:<false> but was:<true>]]>
-            </message>
-            <full-stacktrace>
-              <![CDATA[java.lang.AssertionError: expected:<false> but was:<true>
-	at org.testng.Assert.fail(Assert.java:89)
-	at org.testng.Assert.failNotEquals(Assert.java:489)
-	at org.testng.Assert.assertFalse(Assert.java:58)
-	at org.testng.Assert.assertFalse(Assert.java:68)
-	at org.gdejohn.similitude.TypeTokenTest.instanceOfRecursivelyDefinedType(TypeTokenTest.java:796)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
-	at java.lang.reflect.Method.invoke(Unknown Source)
-	at org.testng.internal.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:80)
-	at org.testng.internal.Invoker.invokeMethod(Invoker.java:702)
-	at org.testng.internal.Invoker.invokeTestMethod(Invoker.java:894)
-	at org.testng.internal.Invoker.invokeTestMethods(Invoker.java:1219)
-	at org.testng.internal.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:127)
-	at org.testng.internal.TestMethodWorker.run(TestMethodWorker.java:111)
-	at org.testng.TestRunner.privateRun(TestRunner.java:768)
-	at org.testng.TestRunner.run(TestRunner.java:617)
-	at org.testng.SuiteRunner.runTest(SuiteRunner.java:334)
-	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:329)
-	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:291)
-	at org.testng.SuiteRunner.run(SuiteRunner.java:240)
-	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:53)
-	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:87)
-	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1185)
-	at org.testng.TestNG.runSuitesLocally(TestNG.java:1110)
-	at org.testng.TestNG.run(TestNG.java:1022)
-	at org.testng.remote.RemoteTestNG.run(RemoteTestNG.java:109)
-	at org.testng.remote.RemoteTestNG.initAndRun(RemoteTestNG.java:202)
-	at org.testng.remote.RemoteTestNG.main(RemoteTestNG.java:173)
-]]>
-            </full-stacktrace>
-          </exception> <!-- java.lang.AssertionError -->
-        </test-method> <!-- instanceOfRecursivelyDefinedType -->
-      </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
+    <test name="Default test" duration-ms="146" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
+      <class name="org.gdejohn.similitude.ClonerTest">
+        <test-method status="PASS" signature="baseCases()[pri:0, instance:org.gdejohn.similitude.ClonerTest@152513a]" name="baseCases" duration-ms="73" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
+        </test-method> <!-- baseCases -->
+        <test-method status="PASS" signature="covariantArrays()[pri:0, instance:org.gdejohn.similitude.ClonerTest@152513a]" name="covariantArrays" duration-ms="30" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
+        </test-method> <!-- covariantArrays -->
+        <test-method status="PASS" signature="enumType()[pri:0, instance:org.gdejohn.similitude.ClonerTest@152513a]" name="enumType" duration-ms="2" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
+        </test-method> <!-- enumType -->
+        <test-method status="PASS" signature="multidimensionalArray()[pri:0, instance:org.gdejohn.similitude.ClonerTest@152513a]" name="multidimensionalArray" duration-ms="4" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
+        </test-method> <!-- multidimensionalArray -->
+        <test-method status="PASS" signature="primitiveArray()[pri:0, instance:org.gdejohn.similitude.ClonerTest@152513a]" name="primitiveArray" duration-ms="2" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
+        </test-method> <!-- primitiveArray -->
+        <test-method status="PASS" signature="selfReferentialArray()[pri:0, instance:org.gdejohn.similitude.ClonerTest@152513a]" name="selfReferentialArray" duration-ms="2" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
+        </test-method> <!-- selfReferentialArray -->
+        <test-method status="PASS" signature="stringBuilder()[pri:0, instance:org.gdejohn.similitude.ClonerTest@152513a]" name="stringBuilder" duration-ms="7" started-at="2012-05-05T15:03:33Z" finished-at="2012-05-05T15:03:33Z">
+        </test-method> <!-- stringBuilder -->
+      </class> <!-- org.gdejohn.similitude.ClonerTest -->
     </test> <!-- Default test -->
   </suite> <!-- Default suite -->
 </testng-results>
