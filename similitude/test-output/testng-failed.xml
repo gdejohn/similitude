@@ -3,11 +3,11 @@
 <suite name="Failed suite [Default suite]">
   <test name="Default test(failed)" preserve-order="true">
     <classes>
-      <class name="org.gdejohn.similitude.ClonerTest1">
+      <class name="org.gdejohn.similitude.TypeTokenTest">
         <methods>
-          <include name="testListOfStrings"/>
+          <include name="arrayList"/>
         </methods>
-      </class> <!-- org.gdejohn.similitude.ClonerTest1 -->
+      </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
     </classes>
   </test> <!-- Default test(failed) -->
 </suite> <!-- Failed suite [Default suite] -->

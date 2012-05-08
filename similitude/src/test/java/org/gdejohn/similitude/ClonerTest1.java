@@ -45,26 +45,6 @@ public class ClonerTest1
 		}
 	}
 	
-	@Test
-	public void testNonGenericClassTypeToken( )
-	{
-		try
-		{
-			ROOT_LOGGER.setLevel(DEBUG);
-			
-			String instance = "\"xyzzy\"";
-			Class<? extends String> expected = instance.getClass( );
-			TypeToken<? extends String> token = typeOf(instance);
-			Class<? extends String> actual = token.getRawType( );
-			
-			assertEquals(actual, expected);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
-	}
-	
 	interface Test1<E>
 	{
 		E foo( );

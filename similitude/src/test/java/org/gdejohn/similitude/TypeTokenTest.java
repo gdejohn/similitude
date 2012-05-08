@@ -14,147 +14,111 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
+import org.testng.annotations.AfterGroups;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.Test;
 
 import ch.qos.logback.classic.Logger;
 
+@Test
 @SuppressWarnings("javadoc")
 public class TypeTokenTest
 {
-	private static final Logger ROOT_LOGGER;
+	private static final Logger ROOT_LOGGER =
+	(
+		(Logger)getLogger(ROOT_LOGGER_NAME)
+	);
 	
-	static
+	@BeforeGroups(groups="debug")
+	public static void setLevelDebug( )
 	{
-		ROOT_LOGGER = (Logger)getLogger(ROOT_LOGGER_NAME);
-		
+		ROOT_LOGGER.setLevel(DEBUG);
+	}
+	
+	@BeforeClass
+	@AfterGroups(alwaysRun=true, groups="debug")
+	public static void setLevelWarn( )
+	{
 		ROOT_LOGGER.setLevel(WARN);
 	}
 	
-	@Test
 	public static void nonGenericType( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			Class<String> expected = String.class;
-			
-			TypeToken<String> token = typeOf(expected);
-			
-			Class<String> actual = token.getRawType( );
-			
-			assertEquals(actual, expected);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		Class<String> expected = String.class;
+		
+		TypeToken<String> token = typeOf(expected);
+		
+		Class<String> actual = token.getRawType( );
+		
+		assertEquals(actual, expected);
 	}
 	
-	@Test
 	public static void nonGenericTypeToString( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			Class<String> clazz = String.class;
-			
-			String expected = clazz.getSimpleName( );
-			
-			TypeToken<String> token = typeOf(clazz);
-			
-			String actual = token.toString( );
-			
-			assertEquals(actual, expected);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		Class<String> clazz = String.class;
+		
+		String expected = clazz.getSimpleName( );
+		
+		TypeToken<String> token = typeOf(clazz);
+		
+		String actual = token.toString( );
+		
+		assertEquals(actual, expected);
 	}
 	
-	@Test
 	public static void nonGenericObject( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			String string = "xyzzy";
-			
-			Class<? extends String> expected = string.getClass( );
-			
-			TypeToken<? extends String> token = typeOf(string);
-			
-			Class<? extends String> actual = token.getRawType( );
-			
-			assertEquals(actual, expected);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		String string = "xyzzy";
+		
+		Class<? extends String> expected = string.getClass( );
+		
+		TypeToken<? extends String> token = typeOf(string);
+		
+		Class<? extends String> actual = token.getRawType( );
+		
+		assertEquals(actual, expected);
 	}
 	
-	@Test
 	public static void nonGenericEquality( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<? extends String> foo = typeOf("foo");
-			
-			TypeToken<? extends String> bar = typeOf("bar");
-			
-			TypeToken<? extends Integer> baz = typeOf(valueOf(0));
-			
-			assertEquals(foo, foo);
-			assertEquals(bar, bar);
-			assertEquals(baz, baz);
-			
-			assertEquals(foo, bar);
-			assertEquals(bar, foo);
-			
-			assertNotEquals(foo, baz);
-			assertNotEquals(baz, foo);
-			assertNotEquals(bar, baz);
-			assertNotEquals(baz, bar);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<? extends String> foo = typeOf("foo");
+		
+		TypeToken<? extends String> bar = typeOf("bar");
+		
+		TypeToken<? extends Integer> baz = typeOf(valueOf(0));
+		
+		assertEquals(foo, foo);
+		assertEquals(bar, bar);
+		assertEquals(baz, baz);
+		
+		assertEquals(foo, bar);
+		assertEquals(bar, foo);
+		
+		assertNotEquals(foo, baz);
+		assertNotEquals(baz, foo);
+		assertNotEquals(bar, baz);
+		assertNotEquals(baz, bar);
 	}
 	
-	@Test
 	public static void array( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<? extends String[ ]> token = typeOf(new String[ ] {"foo", "bar", "baz"});
-			
-			assertEquals(token.getRawType( ), String[ ].class);
-			assertEquals(token.toString( ), "String[]");
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<? extends String[ ]> token = typeOf(new String[ ] {"foo", "bar", "baz"});
+		
+		assertEquals(token.getRawType( ), String[ ].class);
+		assertEquals(token.toString( ), "String[]");
 	}
 	
-	@Test
-	public static void inheritedFields( )
+	public static void inheritedFields( ) throws SecurityException, NoSuchFieldException
 	{
 		class Parent
 		{
@@ -168,34 +132,20 @@ public class TypeTokenTest
 			private final String childField = "child"; 
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			Field parentField = Parent.class.getDeclaredField("parentField");
-			
-			Field childField = Child.class.getDeclaredField("childField");
-			
-			Set<Field> expected = new LinkedHashSet<Field>(asList(parentField, childField));
-			
-			TypeToken<Child> token = typeOf(Child.class);
-			
-			Set<Field> actual = token.getAllInstanceFields( );
-			
-			assertEquals(actual, expected);
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		Field parentField = Parent.class.getDeclaredField("parentField");
+		
+		Field childField = Child.class.getDeclaredField("childField");
+		
+		Set<Field> expected = new LinkedHashSet<Field>(asList(parentField, childField));
+		
+		TypeToken<Child> token = typeOf(Child.class);
+		
+		Set<Field> actual = token.getAllInstanceFields( );
+		
+		assertEquals(actual, expected);
 	}
 	
-	@Test
-	public static void privateConstructor( )
+	public static void privateConstructor( ) throws SecurityException, NoSuchMethodException
 	{
 		class Private
 		{
@@ -205,27 +155,13 @@ public class TypeTokenTest
 			}
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			Set<Constructor<Private>> constructors = typeOf(Private.class).getAccessibleConstructors( );
-			
-			assertEquals(constructors.size( ), 1);
-			assertEquals(constructors.iterator( ).next( ), Private.class.getDeclaredConstructor( ));
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		Set<Constructor<Private>> constructors = typeOf(Private.class).getAccessibleConstructors( );
+		
+		assertEquals(constructors.size( ), 1);
+		assertEquals(constructors.iterator( ).next( ), Private.class.getDeclaredConstructor( ));
 	}
 	
-	@Test
-	public static void parameterizedType( )
+	public static void parameterizedType( ) throws SecurityException, NoSuchMethodException
 	{
 		class First<F>
 		{
@@ -249,32 +185,18 @@ public class TypeTokenTest
 			}
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			String string = "xyzzy";
-			First<String> first = new First<String>(string);
-			Second<String> second = new Second<String>(first);
-			
-			Type parameterType = Second.class.getConstructor(First.class).getGenericParameterTypes( )[0];
-			
-			TypeToken<?> constructorParameter = typeOf(parameterType, typeOf(second));
-			
-			assertEquals(constructorParameter, typeOf(first));
-			assertEquals(constructorParameter.getTypeArgument(First.class.getTypeParameters( )[0]), typeOf(string));
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		String string = "xyzzy";
+		First<String> first = new First<String>(string);
+		Second<String> second = new Second<String>(first);
+		
+		Type parameterType = Second.class.getConstructor(First.class).getGenericParameterTypes( )[0];
+		
+		TypeToken<?> constructorParameter = typeOf(parameterType, typeOf(second));
+		
+		assertEquals(constructorParameter, typeOf(first));
+		assertEquals(constructorParameter.getTypeArgument(First.class.getTypeParameters( )[0]), typeOf(string));
 	}
 	
-	@Test
 	public static void genericArrayType( )
 	{
 		class Foo<F>
@@ -286,22 +208,12 @@ public class TypeTokenTest
 			}
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<Foo<String>> parent = new TypeToken<Foo<String>>( ) { };
-			TypeToken<?> token = typeOf(Foo.class.getDeclaredConstructors( )[0].getGenericParameterTypes( )[0], parent);
-			
-			assertEquals(token.getRawType( ), String[ ].class);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<Foo<String>> parent = new TypeToken<Foo<String>>( ) { };
+		TypeToken<?> token = typeOf(Foo.class.getDeclaredConstructors( )[0].getGenericParameterTypes( )[0], parent);
+		
+		assertEquals(token.getRawType( ), String[ ].class);
 	}
 	
-	@Test
 	public static void wildcardType( )
 	{
 		class Foo<F> { }
@@ -315,49 +227,25 @@ public class TypeTokenTest
 			}
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<Bar<String>> parent = new TypeToken<Bar<String>>( ) { };
-			TypeToken<?> token = typeOf(Bar.class.getDeclaredConstructors( )[0].getGenericParameterTypes( )[0], parent);
-			
-			assertEquals(token.getRawType( ), Foo.class);
-			assertEquals(token.getTypeArgument(Foo.class.getTypeParameters( )[0]).getRawType( ), String.class);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<Bar<String>> parent = new TypeToken<Bar<String>>( ) { };
+		TypeToken<?> token = typeOf(Bar.class.getDeclaredConstructors( )[0].getGenericParameterTypes( )[0], parent);
+		
+		assertEquals(token.getRawType( ), Foo.class);
+		assertEquals(token.getTypeArgument(Foo.class.getTypeParameters( )[0]).getRawType( ), String.class);
 	}
 	
-	@Test
 	public static void superTypeToken( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<Map<Integer, Set<? extends char[ ]>>> token = new TypeToken<Map<Integer, Set<? extends char[ ]>>>( ) { };
-			TypeToken<?> valueType = token.getTypeArgument(Map.class.getTypeParameters( )[1]);
-			
-			assertEquals(token.toString( ), "Map<Integer,Set<char[]>>");
-			assertEquals(token.getRawType( ), Map.class);
-			assertEquals(token.getTypeArgument(Map.class.getTypeParameters( )[0]).getRawType( ), Integer.class);
-			assertEquals(valueType.getRawType( ), Set.class);
-			assertEquals(valueType.getTypeArgument(Set.class.getTypeParameters( )[0]).getRawType( ), char[ ].class);
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<Map<Integer, Set<? extends char[ ]>>> token = new TypeToken<Map<Integer, Set<? extends char[ ]>>>( ) { };
+		TypeToken<?> valueType = token.getTypeArgument(Map.class.getTypeParameters( )[1]);
+		
+		assertEquals(token.toString( ), "Map<Integer,Set<char[]>>");
+		assertEquals(token.getRawType( ), Map.class);
+		assertEquals(token.getTypeArgument(Map.class.getTypeParameters( )[0]).getRawType( ), Integer.class);
+		assertEquals(valueType.getRawType( ), Set.class);
+		assertEquals(valueType.getTypeArgument(Set.class.getTypeParameters( )[0]).getRawType( ), char[ ].class);
 	}
 	
-	@Test
 	public static void instanceOfTopLevelGenericType( )
 	{
 		class Zeroth<Z>
@@ -404,49 +292,35 @@ public class TypeTokenTest
 			}
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			String string = "xyzzy";
-			
-			Third<String> third = new Third<String>(string);
-			Second<Third<String>> second = new Second<Third<String>>(third);
-			First<Second<Third<String>>> first = new First<Second<Third<String>>>(second);
-			
-			TypeToken<? extends First<Second<Third<String>>>> firstToken = typeOf(first);
-			
-			TypeToken<?> secondToken = firstToken.getTypeArgument(First.class.getTypeParameters( )[0]);
-			TypeToken<?> thirdToken = secondToken.getTypeArgument(Second.class.getTypeParameters( )[0]);
-			TypeToken<?> stringToken = thirdToken.getTypeArgument(Third.class.getTypeParameters( )[0]);
-			
-			assertEquals(firstToken.getRawType( ), first.getClass( ));
-			assertEquals(firstToken.toString( ), "First<Second<Third<String>>>");
-			
-			assertEquals(secondToken.getRawType( ), second.getClass( ));
-			assertEquals(secondToken.toString( ), "Second<Third<String>>");
-			assertEquals(secondToken, typeOf(second));
+		String string = "xyzzy";
+		
+		Third<String> third = new Third<String>(string);
+		Second<Third<String>> second = new Second<Third<String>>(third);
+		First<Second<Third<String>>> first = new First<Second<Third<String>>>(second);
+		
+		TypeToken<? extends First<Second<Third<String>>>> firstToken = typeOf(first);
+		
+		TypeToken<?> secondToken = firstToken.getTypeArgument(First.class.getTypeParameters( )[0]);
+		TypeToken<?> thirdToken = secondToken.getTypeArgument(Second.class.getTypeParameters( )[0]);
+		TypeToken<?> stringToken = thirdToken.getTypeArgument(Third.class.getTypeParameters( )[0]);
+		
+		assertEquals(firstToken.getRawType( ), first.getClass( ));
+		assertEquals(firstToken.toString( ), "First<Second<Third<String>>>");
+		
+		assertEquals(secondToken.getRawType( ), second.getClass( ));
+		assertEquals(secondToken.toString( ), "Second<Third<String>>");
+		assertEquals(secondToken, typeOf(second));
 
-			assertEquals(thirdToken.getRawType( ), third.getClass( ));
-			assertEquals(thirdToken.toString( ), "Third<String>");
-			assertEquals(thirdToken, typeOf(third));
+		assertEquals(thirdToken.getRawType( ), third.getClass( ));
+		assertEquals(thirdToken.toString( ), "Third<String>");
+		assertEquals(thirdToken, typeOf(third));
 
-			assertEquals(stringToken.getRawType( ), string.getClass( ));
-			assertEquals(stringToken.toString( ), "String");
-			assertEquals(stringToken, typeOf(string));
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		assertEquals(stringToken.getRawType( ), string.getClass( ));
+		assertEquals(stringToken.toString( ), "String");
+		assertEquals(stringToken, typeOf(string));
 	}
 	
-	@Test
-	public static void genericMethodReturnType( )
+	public static void genericMethodReturnType( ) throws SecurityException, NoSuchMethodException
 	{
 		class Parameter<P>
 		{
@@ -478,29 +352,15 @@ public class TypeTokenTest
 			}
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			Method method = Clazz.class.getMethod("method", Parameter.class);
-			
-			TypeToken<?> returnType = typeOf(new Clazz<String>("xyzzy")).getReturnType(method, new Parameter<Integer>(valueOf(1)));
-			
-			assertEquals(returnType.getRawType( ), ReturnType.class);
-			assertEquals(returnType.getTypeArgument(ReturnType.class.getTypeParameters( )[0]).getRawType( ), Integer.class);
-			assertEquals(returnType.getTypeArgument(ReturnType.class.getTypeParameters( )[1]).getRawType( ), String.class);
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		Method method = Clazz.class.getMethod("method", Parameter.class);
+		
+		TypeToken<?> returnType = typeOf(new Clazz<String>("xyzzy")).getReturnType(method, new Parameter<Integer>(valueOf(1)));
+		
+		assertEquals(returnType.getRawType( ), ReturnType.class);
+		assertEquals(returnType.getTypeArgument(ReturnType.class.getTypeParameters( )[0]).getRawType( ), Integer.class);
+		assertEquals(returnType.getTypeArgument(ReturnType.class.getTypeParameters( )[1]).getRawType( ), String.class);
 	}
 	
-	@Test
 	public static void genericEnclosingType( )
 	{
 		class Outer<O>
@@ -516,67 +376,43 @@ public class TypeTokenTest
 			class Inner { }
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			String string = "xyzzy";
-			Outer<String> outer = new Outer<String>(string);
-			Outer<String>.Inner inner = outer.new Inner( );
-			
-			TypeToken<? extends Outer<String>.Inner> token = typeOf(inner);
-			TypeToken<?> enclosing = token.getEnclosingType( );
-			TypeToken<Outer<String>.Inner> returnType = new TypeToken<Outer<String>.Inner>( ) { };
-			
-			assertEquals(token.getRawType( ), Outer.Inner.class);
-			
-			assertEquals(enclosing.getRawType( ), Outer.class);
-			assertEquals(enclosing.getTypeArgument(Outer.class.getTypeParameters( )[0]).getRawType( ), string.getClass( ));
-			assertEquals(enclosing, typeOf(outer));
-			
-			assertEquals(token.toString( ), "Outer<String>.Inner");
-			
-			assertEquals(token, returnType);
-			
-			assertEquals(returnType.getRawType( ), Outer.Inner.class);
-			assertEquals(returnType.toString( ), "Outer<String>.Inner");
-		}
-		catch (Exception e)
-		{
-			fail("Failed.", e);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		String string = "xyzzy";
+		Outer<String> outer = new Outer<String>(string);
+		Outer<String>.Inner inner = outer.new Inner( );
+		
+		TypeToken<? extends Outer<String>.Inner> token = typeOf(inner);
+		TypeToken<?> enclosing = token.getEnclosingType( );
+		TypeToken<Outer<String>.Inner> returnType = new TypeToken<Outer<String>.Inner>( ) { };
+		
+		assertEquals(token.getRawType( ), Outer.Inner.class);
+		
+		assertEquals(enclosing.getRawType( ), Outer.class);
+		assertEquals(enclosing.getTypeArgument(Outer.class.getTypeParameters( )[0]).getRawType( ), string.getClass( ));
+		assertEquals(enclosing, typeOf(outer));
+		
+		assertEquals(token.toString( ), "Outer<String>.Inner");
+		
+		assertEquals(token, returnType);
+		
+		assertEquals(returnType.getRawType( ), Outer.Inner.class);
+		assertEquals(returnType.toString( ), "Outer<String>.Inner");
 	}
 	
-	@Test
 	public static void nonGenericSuperType( )
 	{
 		class Foo { }
 		
 		class Bar extends Foo { }
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<Bar> bar = typeOf(Bar.class);
-			TypeToken<?> foo = bar.getSuperType( );
-			TypeToken<?> object = foo.getSuperType( );
-			
-			assertEquals(foo.getRawType( ), Foo.class);
-			assertEquals(object.getRawType( ), Object.class);
-			assertNull(object.getSuperType( ));
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<Bar> bar = typeOf(Bar.class);
+		TypeToken<?> foo = bar.getSuperType( );
+		TypeToken<?> object = foo.getSuperType( );
+		
+		assertEquals(foo.getRawType( ), Foo.class);
+		assertEquals(object.getRawType( ), Object.class);
+		assertNull(object.getSuperType( ));
 	}
 	
-	@Test
 	public static void genericSuperType( )
 	{
 		class Foo<E, F> { }
@@ -585,154 +421,93 @@ public class TypeTokenTest
 		
 		class Baz<Z> extends Bar<Z> { }
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeVariable<?> E = Foo.class.getTypeParameters( )[0];
-			TypeVariable<?> F = Foo.class.getTypeParameters( )[1];
-			TypeVariable<?> R = Bar.class.getTypeParameters( )[0];
-			TypeVariable<?> T = Set.class.getTypeParameters( )[0];
-			
-			TypeToken<Baz<Integer>> baz = new TypeToken<Baz<Integer>>( ) { };
-			TypeToken<?> bar = baz.getSuperType( );
-			TypeToken<?> foo = bar.getSuperType( );
-			TypeToken<?> fooF = foo.getTypeArgument(F);
-			TypeToken<?> object = foo.getSuperType( );
+		TypeVariable<?> E = Foo.class.getTypeParameters( )[0];
+		TypeVariable<?> F = Foo.class.getTypeParameters( )[1];
+		TypeVariable<?> R = Bar.class.getTypeParameters( )[0];
+		TypeVariable<?> T = Set.class.getTypeParameters( )[0];
+		
+		TypeToken<Baz<Integer>> baz = new TypeToken<Baz<Integer>>( ) { };
+		TypeToken<?> bar = baz.getSuperType( );
+		TypeToken<?> foo = bar.getSuperType( );
+		TypeToken<?> fooF = foo.getTypeArgument(F);
+		TypeToken<?> object = foo.getSuperType( );
 
-			assertEquals(bar.getRawType( ), Bar.class);
-			assertEquals(bar.getTypeArgument(R).getRawType( ), Integer.class);
-			assertEquals(foo.getRawType( ), Foo.class);
-			assertEquals(foo.getTypeArgument(E).getRawType( ), Integer.class);
-			assertEquals(fooF.getRawType( ), Set.class);
-			assertEquals(fooF.getTypeArgument(T).getRawType( ), String[ ].class);
-			assertEquals(object.getRawType( ), Object.class);
-			assertNull(object.getSuperType( ));
-			assertEquals(bar.getTypeArgument(E).getRawType( ), Integer.class);
-			assertEquals(bar.getTypeArgument(F).getRawType( ), Set.class);
-			
-			try
-			{
-				bar.getTypeArgument(T);
-				
-				fail("Failed.");
-			}
-			catch (Exception e)
-			{
-				return;
-			}
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		assertEquals(bar.getRawType( ), Bar.class);
+		assertEquals(bar.getTypeArgument(R).getRawType( ), Integer.class);
+		assertEquals(foo.getRawType( ), Foo.class);
+		assertEquals(foo.getTypeArgument(E).getRawType( ), Integer.class);
+		assertEquals(fooF.getRawType( ), Set.class);
+		assertEquals(fooF.getTypeArgument(T).getRawType( ), String[ ].class);
+		assertEquals(object.getRawType( ), Object.class);
+		assertNull(object.getSuperType( ));
+		assertEquals(bar.getTypeArgument(E).getRawType( ), Integer.class);
+		assertEquals(bar.getTypeArgument(F).getRawType( ), Set.class);
 	}
 	
-	interface IFirst { }
+	private interface IFirst { }
 	
-	interface ISecond { }
+	private interface ISecond { }
 	
-	interface IThird extends IFirst { }
+	private interface IThird extends IFirst { }
 	
-	interface IFourth extends ISecond { }
+	private interface IFourth extends ISecond { }
 	
-	@Test
 	public static void nonGenericInterfaces( )
 	{
 		class Impl implements IThird, IFourth { }
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<Impl> token = typeOf(Impl.class);
-			
-			Iterator<TypeToken<?>> iterator = token.getInterfaces( ).iterator( );
-			
-			assertEquals(token.getInterfaces( ).size( ), 2);
-			
-			TypeToken<?> third = iterator.next( );
-			
-			assertEquals(third.getRawType( ), IThird.class);
-			assertNull(third.getSuperType( ));
-			
-			TypeToken<?> fourth = iterator.next( );
-			
-			assertEquals(fourth.getRawType( ), IFourth.class);
-			assertNull(fourth.getSuperType( ));
-			
-			iterator = third.getInterfaces( ).iterator( );
-			
-			assertEquals(iterator.next( ).getRawType( ), IFirst.class);
-			assertFalse(iterator.hasNext( ));
-			
-			iterator = fourth.getInterfaces( ).iterator( );
-			
-			assertEquals(iterator.next( ).getRawType( ), ISecond.class);
-			assertFalse(iterator.hasNext( ));
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<Impl> token = typeOf(Impl.class);
+		
+		Iterator<TypeToken<?>> iterator = token.getInterfaces( ).iterator( );
+		
+		assertEquals(token.getInterfaces( ).size( ), 2);
+		
+		TypeToken<?> third = iterator.next( );
+		
+		assertEquals(third.getRawType( ), IThird.class);
+		assertNull(third.getSuperType( ));
+		
+		TypeToken<?> fourth = iterator.next( );
+		
+		assertEquals(fourth.getRawType( ), IFourth.class);
+		assertNull(fourth.getSuperType( ));
+		
+		iterator = third.getInterfaces( ).iterator( );
+		
+		assertEquals(iterator.next( ).getRawType( ), IFirst.class);
+		assertFalse(iterator.hasNext( ));
+		
+		iterator = fourth.getInterfaces( ).iterator( );
+		
+		assertEquals(iterator.next( ).getRawType( ), ISecond.class);
+		assertFalse(iterator.hasNext( ));
 	}
 	
-	enum EnumType { }
+	private enum EnumType { }
 	
-	@Test
 	public static void enumType( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeVariable<?> E = Enum.class.getTypeParameters( )[0];
-			
-			TypeToken<EnumType> token = typeOf(EnumType.class);
-			TypeToken<?> arg = token.getTypeArgument(E);
-			
-			assertEquals(arg, token);
-			assertSame(arg, token);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeVariable<?> E = Enum.class.getTypeParameters( )[0];
+		
+		TypeToken<EnumType> token = typeOf(EnumType.class);
+		TypeToken<?> arg = token.getTypeArgument(E);
+		
+		assertEquals(arg, token);
+		assertSame(arg, token);
 	}
 	
-	@Test
 	public static void recursiveGenericInterface( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeVariable<?> T = Comparable.class.getTypeParameters( )[0];
-			
-			assertEquals(typeOf(String.class).getTypeArgument(T).getRawType( ), String.class);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeVariable<?> T = Comparable.class.getTypeParameters( )[0];
+		
+		assertEquals(typeOf(String.class).getTypeArgument(T).getRawType( ), String.class);
 	}
 	
-	@Test
 	public static void instanceOfNonGenericType( )
 	{
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			assertTrue(typeOf(String.class).isInstance("xyzzy"));
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		assertTrue(typeOf(String.class).isInstance("xyzzy"));
 	}
 	
-	@Test
 	public static void instanceOfGenericType( )
 	{
 		abstract class Abstract<A> implements Comparable<A> { }
@@ -753,25 +528,15 @@ public class TypeTokenTest
 			}
 		}
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<Comparable<CharSequence>> comparableCharSequence = new TypeToken<Comparable<CharSequence>>( ) { };
-			TypeToken<Comparable<Number>> comparableNumber = new TypeToken<Comparable<Number>>( ) { };
-			
-			Impl<String> instance = new Impl<String>("xyzzy");
-			
-			assertTrue(comparableCharSequence.isInstance(instance));
-			assertFalse(comparableNumber.isInstance(instance));
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<Comparable<CharSequence>> comparableCharSequence = new TypeToken<Comparable<CharSequence>>( ) { };
+		TypeToken<Comparable<Number>> comparableNumber = new TypeToken<Comparable<Number>>( ) { };
+		
+		Impl<String> instance = new Impl<String>("xyzzy");
+		
+		assertTrue(comparableCharSequence.isInstance(instance));
+		assertFalse(comparableNumber.isInstance(instance));
 	}
 	
-	@Test
 	public static void commonSuperType( )
 	{
 		class Foo { }
@@ -780,26 +545,16 @@ public class TypeTokenTest
 		
 		class Baz extends Foo { }
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			TypeToken<Foo> foo = typeOf(Foo.class);
-			TypeToken<Bar> bar = typeOf(Bar.class);
-			TypeToken<Baz> baz = typeOf(Baz.class);
+		TypeToken<Foo> foo = typeOf(Foo.class);
+		TypeToken<Bar> bar = typeOf(Bar.class);
+		TypeToken<Baz> baz = typeOf(Baz.class);
 
-			assertEquals(foo.getCommonSuperType(foo), foo);
-			assertEquals(foo.getCommonSuperType(bar), foo);
-			assertEquals(bar.getCommonSuperType(baz), foo);
-			assertEquals(baz.getCommonSuperType(bar), foo);
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		assertEquals(foo.getCommonSuperType(foo), foo);
+		assertEquals(foo.getCommonSuperType(bar), foo);
+		assertEquals(bar.getCommonSuperType(baz), foo);
+		assertEquals(baz.getCommonSuperType(bar), foo);
 	}
 	
-	@Test
 	public static void multipleParameterizations( )
 	{
 		@SuppressWarnings("unused")
@@ -823,27 +578,17 @@ public class TypeTokenTest
 		
 		class Baz extends Foo { }
 		
-		try
-		{
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			Clazz<Foo> list = new Clazz<Foo>(new Bar( ), new Baz( ));
-			
-			TypeToken<Clazz<Foo>> fooClazz = new TypeToken<Clazz<Foo>>( ) { };
-			TypeToken<Clazz<Bar>> barClazz = new TypeToken<Clazz<Bar>>( ) { };
-			TypeToken<Clazz<Baz>> bazClazz = new TypeToken<Clazz<Baz>>( ) { };
-			
-			assertTrue(fooClazz.isInstance(list));
-			assertFalse(barClazz.isInstance(list));
-			assertFalse(bazClazz.isInstance(list));
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		Clazz<Foo> list = new Clazz<Foo>(new Bar( ), new Baz( ));
+		
+		TypeToken<Clazz<Foo>> fooClazz = new TypeToken<Clazz<Foo>>( ) { };
+		TypeToken<Clazz<Bar>> barClazz = new TypeToken<Clazz<Bar>>( ) { };
+		TypeToken<Clazz<Baz>> bazClazz = new TypeToken<Clazz<Baz>>( ) { };
+		
+		assertTrue(fooClazz.isInstance(list));
+		assertFalse(barClazz.isInstance(list));
+		assertFalse(bazClazz.isInstance(list));
 	}
 	
-	@Test
 	public static void instanceOfRecursivelyDefinedType( )
 	{
 		@SuppressWarnings("unused")
@@ -867,27 +612,17 @@ public class TypeTokenTest
 		
 		class Baz extends Foo { }
 		
-		try
-		{
-			TypeToken<Recursive<Foo>> foo = new TypeToken<Recursive<Foo>>( ) { };
-			TypeToken<Recursive<Bar>> bar = new TypeToken<Recursive<Bar>>( ) { };
-			TypeToken<Recursive<Baz>> baz = new TypeToken<Recursive<Baz>>( ) { };
-			
-			// ROOT_LOGGER.setLevel(DEBUG);
-			
-			Recursive<Foo> object = new Recursive<Foo>(new Bar( ), new Recursive<Baz>(new Baz( ), null));
-			
-			assertTrue(foo.isInstance(object));
-			assertFalse(bar.isInstance(object));
-			assertFalse(baz.isInstance(object));
-		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		TypeToken<Recursive<Foo>> foo = new TypeToken<Recursive<Foo>>( ) { };
+		TypeToken<Recursive<Bar>> bar = new TypeToken<Recursive<Bar>>( ) { };
+		TypeToken<Recursive<Baz>> baz = new TypeToken<Recursive<Baz>>( ) { };
+		
+		Recursive<Foo> object = new Recursive<Foo>(new Bar( ), new Recursive<Baz>(new Baz( ), null));
+		
+		assertTrue(foo.isInstance(object));
+		assertFalse(bar.isInstance(object));
+		assertFalse(baz.isInstance(object));
 	}
 	
-	@Test
 	public static void linkedList( )
 	{
 		class Foo { }
@@ -896,26 +631,90 @@ public class TypeTokenTest
 		
 		class Baz extends Foo { }
 		
-		try
+		TypeToken<List<Foo>> fooList = new TypeToken<List<Foo>>( ) { };
+		TypeToken<List<Bar>> barList = new TypeToken<List<Bar>>( ) { };
+		TypeToken<List<Baz>> bazList = new TypeToken<List<Baz>>( ) { };
+		
+		LinkedList<Foo> list = new LinkedList<Foo>( );
+		
+		list.add(new Bar( ));
+		list.add(new Baz( ));
+		
+		assertTrue(fooList.isInstance(list));
+		assertFalse(barList.isInstance(list));
+		assertFalse(bazList.isInstance(list));
+	}
+	
+	@Test(enabled=false, groups="debug")
+	public static void treeMap( )
+	{
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		class Baz extends Foo { }
+		
+		TypeToken<Map<Integer, Foo>> fooMap = new TypeToken<Map<Integer, Foo>>( ) { };
+		TypeToken<Map<Integer, Bar>> barMap = new TypeToken<Map<Integer, Bar>>( ) { };
+		TypeToken<Map<Integer, Baz>> bazMap = new TypeToken<Map<Integer, Baz>>( ) { };
+		
+		TreeMap<Integer, Foo> map = new TreeMap<Integer, Foo>( );
+		
+		map.put(valueOf(1), new Bar( ));
+		map.put(valueOf(2), new Baz( ));
+		
+		assertTrue(fooMap.isInstance(map));
+		assertFalse(barMap.isInstance(map));
+		assertFalse(bazMap.isInstance(map));
+	}
+	
+	@Test(groups="debug")
+	public static void genericArrayField( )
+	{
+		class Clazz<C>
 		{
-			TypeToken<List<Foo>> fooList = new TypeToken<List<Foo>>( ) { };
-			TypeToken<List<Bar>> barList = new TypeToken<List<Bar>>( ) { };
-			TypeToken<List<Baz>> bazList = new TypeToken<List<Baz>>( ) { };
+			@SuppressWarnings("unused")
+			C[ ][ ] field;
 			
-			ROOT_LOGGER.setLevel(DEBUG);
-			
-			LinkedList<Foo> list = new LinkedList<Foo>( );
-			
-			list.add(new Bar( ));
-			list.add(new Baz( ));
-			
-			assertTrue(fooList.isInstance(list));
-			assertFalse(barList.isInstance(list));
-			assertFalse(bazList.isInstance(list));
+			Clazz(C[ ][ ] arg)
+			{
+				field = arg;
+			}
 		}
-		finally
-		{
-			ROOT_LOGGER.setLevel(WARN);
-		}
+		
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		class Baz extends Foo { }
+		
+		TypeVariable<?> C = Clazz.class.getTypeParameters( )[0];
+		
+		Clazz<Foo> object = new Clazz<Foo>(new Foo[ ][ ] {{new Foo( )}, {new Bar( ), new Baz( )}});
+		
+		assertEquals(typeOf(object).getTypeArgument(C).getRawType( ), Foo.class);
+	}
+	
+	@Test(enabled=false, groups="debug")
+	public static void arrayList( )
+	{
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		class Baz extends Foo { }
+		
+		TypeToken<List<Foo>> fooList = new TypeToken<List<Foo>>( ) { };
+		TypeToken<List<Bar>> barList = new TypeToken<List<Bar>>( ) { };
+		TypeToken<List<Baz>> bazList = new TypeToken<List<Baz>>( ) { };
+		
+		ArrayList<Foo> list = new ArrayList<Foo>( );
+		
+		list.add(new Bar( ));
+		list.add(new Baz( ));
+		
+		assertTrue(fooList.isInstance(list));
+		assertFalse(barList.isInstance(list));
+		assertFalse(bazList.isInstance(list));
 	}
 }
