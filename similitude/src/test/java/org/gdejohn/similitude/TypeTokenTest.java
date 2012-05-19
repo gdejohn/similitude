@@ -7,7 +7,12 @@ import static java.util.Arrays.asList;
 import static org.gdejohn.similitude.TypeToken.typeOf;
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static org.slf4j.LoggerFactory.getLogger;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -645,7 +650,6 @@ public class TypeTokenTest
 		assertFalse(bazList.isInstance(list));
 	}
 	
-	@Test(enabled=false, groups="debug")
 	public static void treeMap( )
 	{
 		class Foo { }
@@ -660,15 +664,42 @@ public class TypeTokenTest
 		
 		TreeMap<Integer, Foo> map = new TreeMap<Integer, Foo>( );
 		
-		map.put(valueOf(1), new Bar( ));
-		map.put(valueOf(2), new Baz( ));
+		map.put(valueOf(1), new Foo( ));
+		map.put(valueOf(2), new Bar( ));
+		map.put(valueOf(3), new Baz( ));
 		
 		assertTrue(fooMap.isInstance(map));
 		assertFalse(barMap.isInstance(map));
 		assertFalse(bazMap.isInstance(map));
 	}
 	
-	@Test(groups="debug")
+	@Test(enabled=true, groups="debug")
+	public static void stackOverflow( ) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+	{
+		class Foo { }
+		
+		class Bar extends Foo { }
+		
+		TreeMap<Integer, Foo> map = new TreeMap<Integer, Foo>( );
+		
+		map.put(valueOf(1), new Foo( ));
+		map.put(valueOf(2), new Bar( ));
+		
+		Field rootField = TreeMap.class.getDeclaredField("root");
+		rootField.setAccessible(true);
+		Object root = rootField.get(map);
+		Class<?> entryClass = root.getClass( );
+		
+		TypeVariable<?> K = entryClass.getTypeParameters( )[0];
+		TypeVariable<?> V = entryClass.getTypeParameters( )[1];
+		
+		TypeToken<?> token = typeOf(root);
+		
+		assertEquals(token.getRawType( ), entryClass);
+		assertEquals(token.getTypeArgument(K).getRawType( ), Integer.class);
+		assertEquals(token.getTypeArgument(V).getRawType( ), Foo.class);
+	}
+	
 	public static void genericArrayField( )
 	{
 		class Clazz<C>
@@ -695,7 +726,7 @@ public class TypeTokenTest
 		assertEquals(typeOf(object).getTypeArgument(C).getRawType( ), Foo.class);
 	}
 	
-	@Test(enabled=false, groups="debug")
+	@Test(enabled=false)
 	public static void arrayList( )
 	{
 		class Foo { }

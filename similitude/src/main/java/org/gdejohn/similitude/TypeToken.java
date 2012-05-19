@@ -22,7 +22,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.AbstractSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -35,7 +34,6 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 
-
 /**
  * A immutable representation of a Java type.
  * 
@@ -45,41 +43,6 @@ import org.slf4j.Logger;
  */
 public class TypeToken<T>
 {
-	private static final class IdentitySet extends AbstractSet<Object>
-	{
-		final IdentityHashMap<Object, Void> BACKING_MAP =
-		(
-			new IdentityHashMap<Object, Void>( )
-		);
-		
-		@Override
-		public boolean add(final Object OBJECT)
-		{
-			if (BACKING_MAP.containsKey(OBJECT))
-			{
-				return false;
-			}
-			else
-			{
-				BACKING_MAP.put(OBJECT, null);
-				
-				return true;
-			}
-		}
-		
-		@Override
-		public Iterator<Object> iterator( )
-		{
-			return BACKING_MAP.keySet( ).iterator( );
-		}
-		
-		@Override
-		public int size( )
-		{
-			return BACKING_MAP.size( );
-		}
-	}
-	
 	private static final Logger LOGGER = getLogger(TypeToken.class);
 	
 	private static final Map<TypeVariable<?>, TypeToken<?>> NO_TYPE_ARGUMENTS =
@@ -114,7 +77,6 @@ public class TypeToken<T>
 	
 	private String toString = null;
 	
-	@SuppressWarnings("unchecked")
 	protected TypeToken( )
 	{
 		final Type TYPE = this.getClass( ).getGenericSuperclass( );
@@ -133,7 +95,10 @@ public class TypeToken<T>
 					typeOf(PARAMETERIZED_TYPE.getActualTypeArguments( )[0])
 				);
 				
-				this.RAW_TYPE = (Class<T>)TYPE_TOKEN.getRawType( );
+				@SuppressWarnings("unchecked")
+				final Class<T> RAW_TYPE = (Class<T>)TYPE_TOKEN.getRawType( );
+				
+				this.RAW_TYPE = RAW_TYPE;
 				
 				this.TYPE_ARGUMENTS = TYPE_TOKEN.getAllTypeArguments( );
 				
@@ -243,7 +208,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE, final Map<TypeToken<?>, TypeToken<?>> CALLERS, final IdentitySet SET)
+	private static <T> TypeToken<T> typeOf(final Class<T> CLASS, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final TypeToken<?> ENCLOSING_TYPE, final Map<TypeToken<?>, TypeToken<?>> CALLERS, final IdentityHashMap<Object, TypeToken<?>> VALUES)
 	{
 		final TypeVariable<Class<T>>[ ] TYPE_PARAMETERS =
 		(
@@ -271,7 +236,11 @@ public class TypeToken<T>
 					TYPE_VARIABLE,
 					typeOf
 					(
-						TYPE_VARIABLE, PARENT, PARAMETERIZATIONS, CALLERS, SET
+						TYPE_VARIABLE,
+						PARENT,
+						PARAMETERIZATIONS, 
+						CALLERS,
+						VALUES
 					)
 				);
 			}
@@ -290,7 +259,7 @@ public class TypeToken<T>
 				PARAMETERIZATIONS,
 				ENCLOSING_TYPE,
 				CALLERS,
-				new IdentitySet( )
+				new IdentityHashMap<Object, TypeToken<?>>( )
 			)
 		);
 	}
@@ -361,16 +330,7 @@ public class TypeToken<T>
 		return typeOf(CLASS, (TypeToken<?>)null);
 	}
 	
-	/**
-	 * Models the runtime type of a given object.
-	 * 
-	 * @param <T> The type of {@code OBJECT}.
-	 * @param OBJECT An instance of the type to model.
-	 * @param SET Previously encountered field values.
-	 * 
-	 * @return A {@code TypeToken} representing {@code T}.
-	 */
-	private static <T> TypeToken<? extends T> typeOf(final T OBJECT, final IdentitySet SET)
+	private static <T> TypeToken<? extends T> typeOf(final T OBJECT, final IdentityHashMap<Object, TypeToken<?>> VALUES)
 	{
 		LOGGER.debug("Getting type of object: {}", OBJECT);
 		
@@ -487,7 +447,10 @@ public class TypeToken<T>
 		{
 			return
 			(
-				typeOf(RAW_TYPE, null, PARAMETERIZATIONS, null, CALLERS, SET)
+				typeOf
+				(
+					RAW_TYPE, null, PARAMETERIZATIONS, null, CALLERS, VALUES
+				)
 			);
 		}
 		else if (INSTANCE_FIELDS.size( ) > 1)
@@ -514,7 +477,7 @@ public class TypeToken<T>
 						typeOf
 						(
 							INSTANCE_FIELDS.iterator( ).next( ).get(OBJECT),
-							SET
+							VALUES
 						)
 					);
 					
@@ -527,7 +490,7 @@ public class TypeToken<T>
 							PARAMETERIZATIONS,
 							ENCLOSING_TYPE,
 							CALLERS,
-							SET
+							VALUES
 						)
 					);
 				}
@@ -550,7 +513,7 @@ public class TypeToken<T>
 					PARAMETERIZATIONS,
 					typeOf(ENCLOSING_CLASS, null, PARAMETERIZATIONS, CALLERS),
 					CALLERS,
-					SET
+					VALUES
 				)
 			);
 		}
@@ -566,7 +529,7 @@ public class TypeToken<T>
 	 */
 	public static <T> TypeToken<? extends T> typeOf(final T OBJECT)
 	{
-		return typeOf(OBJECT, new IdentitySet( ));
+		return typeOf(OBJECT, new IdentityHashMap<Object, TypeToken<?>>( ));
 	}
 	
 	private static TypeToken<?> typeOf(final WildcardType WILDCARD_TYPE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
@@ -734,14 +697,15 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS, final IdentitySet SET)
+	private static TypeToken<?> typeOf(final TypeVariable<?> TYPE_VARIABLE, final TypeToken<?> PARENT, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS, final IdentityHashMap<Object, TypeToken<?>> VALUES)
 	{
 		LOGGER.debug
 		(
-			"Getting type of type variable.\nType variable: {}\nParent: {}\nParameterizations: {}\nCallers: {}",
+			"Getting type of type variable.\nType variable: {}\nDeclarer: {}\nParent: {}\nParameterizations: {}\nCallers: {}",
 			new Object[ ]
 			{
 				TYPE_VARIABLE,
+				TYPE_VARIABLE.getGenericDeclaration( ),
 				PARENT,
 				PARAMETERIZATIONS,
 				CALLERS
@@ -772,110 +736,161 @@ public class TypeToken<T>
 		
 		for (final Entry<Type, List<Object>> ENTRY : ENTRIES)
 		{
-			for (final Object OBJECT : ENTRY.getValue( ))
+			final Type TYPE = ENTRY.getKey( );
+			
+			final List<TypeVariable<?>> TRACE;
+			
+			if (TYPE instanceof GenericArrayType)
+			{
+				TRACE = null;
+			}
+			else
 			{
 				try
 				{
-					if (SET.add(OBJECT))
-					{
-						final Type TYPE = ENTRY.getKey( );
-						
-						if (TYPE instanceof GenericArrayType)
-						{
-							if (OBJECT instanceof Object[ ] == false)
-							{
-								throw new RuntimeException( );
-							}
-							
-							final Object[ ] ARRAY = (Object[ ])OBJECT;
-							
-							final GenericArrayType GENERIC_ARRAY_TYPE =
-							(
-								(GenericArrayType)TYPE
-							);
-							
-							final Type COMPONENT_TYPE =
-							(
-								GENERIC_ARRAY_TYPE.getGenericComponentType( )
-							);
-							
-							final Map<Type, List<Object>> ELEMENTS =
-							(
-								singletonMap(COMPONENT_TYPE, asList(ARRAY))
-							);
-							
-							TYPE_ARGUMENTS.add
-							(
-								typeOf
-								(
-									TYPE_VARIABLE,
-									PARENT,
-									ELEMENTS,
-									CALLERS,
-									SET
-								)
-							);
-						}
-						else
-						{
-							final List<TypeVariable<?>> TRACE =
-							(
-								traceTypeVariable(TYPE, TYPE_VARIABLE)
-							);
-							
-							TypeToken<?> typeArgument = typeOf(OBJECT, SET);
-							
-							for (final TypeVariable<?> TYPE_PARAMETER : TRACE)
-							{
-								typeArgument =
-								(
-									typeArgument.getTypeArgument
-									(
-										TYPE_PARAMETER
-									)
-								);
-							}
-							
-							if (typeArgument != null)
-							{
-								TYPE_ARGUMENTS.add(typeArgument);
-							}
-							else
-							{
-								throw
-								(
-									new RuntimeException("Null type argument.")
-								);
-							}
-						}
-					}
+					TRACE = traceTypeVariable(TYPE, TYPE_VARIABLE);
 				}
 				catch (final RuntimeException e)
 				{
 					continue;
 				}
 			}
+			
+			for (final Object OBJECT : ENTRY.getValue( ))
+			{
+				if (OBJECT == null)
+				{
+					continue;
+				}
+				else if (TRACE == null)
+				{ // GenericArrayType
+					if (OBJECT instanceof Object[ ] == false)
+					{
+						throw new RuntimeException( );
+					}
+					
+					final Object[ ] ARRAY = (Object[ ])OBJECT;
+					
+					final GenericArrayType GENERIC_ARRAY_TYPE =
+					(
+						(GenericArrayType)TYPE
+					);
+					
+					final Type COMPONENT_TYPE =
+					(
+						GENERIC_ARRAY_TYPE.getGenericComponentType( )
+					);
+					
+					final Map<Type, List<Object>> ELEMENTS =
+					(
+						singletonMap(COMPONENT_TYPE, asList(ARRAY))
+					);
+					
+					try
+					{
+						TYPE_ARGUMENTS.add
+						(
+							typeOf
+							(
+								TYPE_VARIABLE,
+								PARENT,
+								ELEMENTS,
+								CALLERS,
+								VALUES
+							)
+						);
+					}
+					catch (final RuntimeException e)
+					{
+						LOGGER.debug("Type argument not found in array.", e);
+						
+						continue;
+					}
+				}
+				else
+				{
+					TypeToken<?> typeArgument;
+					
+					if (VALUES.containsKey(OBJECT))
+					{
+						typeArgument = VALUES.get(OBJECT);
+						
+						LOGGER.debug("Value already encountered: {} = {}", typeArgument, OBJECT);
+					}
+					else
+					{
+						VALUES.put(OBJECT, null);
+						
+						typeArgument = typeOf(OBJECT, VALUES);
+						
+						LOGGER.debug("Values before: {}", VALUES);
+						
+						VALUES.put(OBJECT, typeArgument);
+						
+						LOGGER.debug("Values after: {}", VALUES);
+						
+						LOGGER.debug("Value added: {} = {}", typeArgument, OBJECT);
+					}
+
+					if (typeArgument == null)
+					{
+						continue;
+					}
+					
+					for (final TypeVariable<?> TYPE_PARAMETER : TRACE)
+					{
+						typeArgument =
+						(
+							typeArgument.getTypeArgument
+							(
+								TYPE_PARAMETER
+							)
+						);
+					}
+					
+					TYPE_ARGUMENTS.add(typeArgument);
+					
+					/*if (typeArgument != null)
+					{
+						TYPE_ARGUMENTS.add(typeArgument);
+					}
+					else
+					{
+						throw
+						(
+							new RuntimeException("Null type argument.")
+						);
+					}*/
+				}
+			}
 		}
 		
 		if (TYPE_ARGUMENTS.isEmpty( ))
 		{
+			LOGGER.debug("Type arguments empty.");
+			
+			return null; /*
+			
 			throw
 			(
 				new RuntimeException("Type argument couldn't be determined.")
-			);
+			); */
 		}
 		else
 		{
+			LOGGER.debug("Type arguments not empty: {}", TYPE_ARGUMENTS);
+			
 			final Iterator<TypeToken<?>> ITERATOR = TYPE_ARGUMENTS.iterator( );
 			
 			TypeToken<?> typeArgument = ITERATOR.next( );
 			
 			while (ITERATOR.hasNext( ))
 			{
-				typeArgument =
-				(
-					typeArgument.getCommonSuperType(ITERATOR.next( ))
-				);
+				final TypeToken<?> NEXT = ITERATOR.next( );
+				
+				LOGGER.debug("Next: {}", NEXT);
+				
+				typeArgument = typeArgument.getCommonSuperType(NEXT);
 			}
 			
 			return typeArgument;
@@ -892,7 +907,7 @@ public class TypeToken<T>
 				PARENT,
 				PARAMETERIZATIONS,
 				CALLERS,
-				new IdentitySet( )
+				new IdentityHashMap<Object, TypeToken<?>>( )
 			)
 		);
 	}
@@ -1201,7 +1216,7 @@ public class TypeToken<T>
 			}
 		}
 		
-		LOGGER.debug("Type variable not found.");
+		LOGGER.debug("Type variable {} declared by {} not found.", TYPE_VARIABLE, TYPE_VARIABLE.getGenericDeclaration( ));
 		
 		throw new RuntimeException("Type variable not found.");
 	}
@@ -1215,7 +1230,7 @@ public class TypeToken<T>
 	 */
 	public final TypeToken<?> getCommonSuperType(final TypeToken<?> THAT)
 	{
-		if (this.isAssignableFrom(THAT))
+		if (THAT == null || this.isAssignableFrom(THAT))
 		{
 			return this;
 		}
@@ -1354,7 +1369,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static Set<Field> getAllInstanceFields(Class<?> type)
+	static Set<Field> getAllInstanceFields(Class<?> type)
 	{
 		final Set<Field> INSTANCE_FIELDS = new LinkedHashSet<Field>( );
 		

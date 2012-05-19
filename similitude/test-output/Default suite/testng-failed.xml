@@ -5,7 +5,9 @@
     <classes>
       <class name="org.gdejohn.similitude.TypeTokenTest">
         <methods>
-          <include name="arrayList"/>
+          <include name="setLevelWarn"/>
+          <include name="setLevelDebug"/>
+          <include name="stackOverflow"/>
         </methods>
       </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
     </classes>
