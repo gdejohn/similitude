@@ -35,7 +35,7 @@ import org.slf4j.Logger;
  */
 public final class Cloner
 {
-	static final Logger LOGGER = getLogger(Cloner.class);
+	private static final Logger LOGGER = getLogger(Cloner.class);
 	
 	/**
 	 * Wrapper types and {@code String} mapped to default values.

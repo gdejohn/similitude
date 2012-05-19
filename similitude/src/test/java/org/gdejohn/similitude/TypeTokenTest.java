@@ -14,12 +14,13 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -45,14 +46,16 @@ public class TypeTokenTest
 	);
 	
 	@BeforeGroups(groups="debug")
-	public static void setLevelDebug( )
+	@SuppressWarnings("unused")
+	private static void setLevelDebug( )
 	{
 		ROOT_LOGGER.setLevel(DEBUG);
 	}
 	
 	@BeforeClass
 	@AfterGroups(alwaysRun=true, groups="debug")
-	public static void setLevelWarn( )
+	@SuppressWarnings("unused")
+	private static void setLevelWarn( )
 	{
 		ROOT_LOGGER.setLevel(WARN);
 	}
@@ -594,7 +597,7 @@ public class TypeTokenTest
 		assertFalse(bazClazz.isInstance(list));
 	}
 	
-	public static void instanceOfRecursivelyDefinedType( )
+	public static void genericRecursive( )
 	{
 		@SuppressWarnings("unused")
 		class Recursive<R>
@@ -630,24 +633,52 @@ public class TypeTokenTest
 	
 	public static void linkedList( )
 	{
-		class Foo { }
+		class Zero { }
+		class One extends Zero { }
+		class Two extends One { }
+		class Three extends Two { }
+		class Four extends Three { }
+		class Five extends Four { }
+		class Six extends Five { }
+		class Seven extends Six { }
+		class Eight extends Seven { }
+		class Nine extends Eight { }
 		
-		class Bar extends Foo { }
+		TypeToken<List<Zero>> zeroList = new TypeToken<List<Zero>>( ) { };
+		TypeToken<List<One>> oneList = new TypeToken<List<One>>( ) { };
+		TypeToken<List<Two>> twoList = new TypeToken<List<Two>>( ) { };
+		TypeToken<List<Three>> threeList = new TypeToken<List<Three>>( ) { };
+		TypeToken<List<Four>> fourList = new TypeToken<List<Four>>( ) { };
+		TypeToken<List<Five>> fiveList = new TypeToken<List<Five>>( ) { };
+		TypeToken<List<Six>> sixList = new TypeToken<List<Six>>( ) { };
+		TypeToken<List<Seven>> sevenList = new TypeToken<List<Seven>>( ) { };
+		TypeToken<List<Eight>> eightList = new TypeToken<List<Eight>>( ) { };
+		TypeToken<List<Nine>> nineList = new TypeToken<List<Nine>>( ) { };
 		
-		class Baz extends Foo { }
+		LinkedList<Zero> list = new LinkedList<Zero>( );
 		
-		TypeToken<List<Foo>> fooList = new TypeToken<List<Foo>>( ) { };
-		TypeToken<List<Bar>> barList = new TypeToken<List<Bar>>( ) { };
-		TypeToken<List<Baz>> bazList = new TypeToken<List<Baz>>( ) { };
+		list.add(new One( ));
+		list.add(new Two( ));
+		list.add(new Three( ));
+		list.add(new Four( ));
+		list.add(new Five( ));
+		list.add(new Six( ));
+		list.add(new Seven( ));
+		list.add(new Eight( ));
+		list.add(new Zero( ));
+		list.add(new Nine( ));
 		
-		LinkedList<Foo> list = new LinkedList<Foo>( );
+		assertFalse(oneList.isInstance(list));
+		assertFalse(twoList.isInstance(list));
+		assertFalse(threeList.isInstance(list));
+		assertFalse(fourList.isInstance(list));
+		assertFalse(fiveList.isInstance(list));
+		assertFalse(sixList.isInstance(list));
+		assertFalse(sevenList.isInstance(list));
+		assertFalse(eightList.isInstance(list));
+		assertFalse(nineList.isInstance(list));
 		
-		list.add(new Bar( ));
-		list.add(new Baz( ));
-		
-		assertTrue(fooList.isInstance(list));
-		assertFalse(barList.isInstance(list));
-		assertFalse(bazList.isInstance(list));
+		assertTrue(zeroList.isInstance(list));
 	}
 	
 	public static void treeMap( )
@@ -671,33 +702,6 @@ public class TypeTokenTest
 		assertTrue(fooMap.isInstance(map));
 		assertFalse(barMap.isInstance(map));
 		assertFalse(bazMap.isInstance(map));
-	}
-	
-	@Test(enabled=true, groups="debug")
-	public static void stackOverflow( ) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
-	{
-		class Foo { }
-		
-		class Bar extends Foo { }
-		
-		TreeMap<Integer, Foo> map = new TreeMap<Integer, Foo>( );
-		
-		map.put(valueOf(1), new Foo( ));
-		map.put(valueOf(2), new Bar( ));
-		
-		Field rootField = TreeMap.class.getDeclaredField("root");
-		rootField.setAccessible(true);
-		Object root = rootField.get(map);
-		Class<?> entryClass = root.getClass( );
-		
-		TypeVariable<?> K = entryClass.getTypeParameters( )[0];
-		TypeVariable<?> V = entryClass.getTypeParameters( )[1];
-		
-		TypeToken<?> token = typeOf(root);
-		
-		assertEquals(token.getRawType( ), entryClass);
-		assertEquals(token.getTypeArgument(K).getRawType( ), Integer.class);
-		assertEquals(token.getTypeArgument(V).getRawType( ), Foo.class);
 	}
 	
 	public static void genericArrayField( )
@@ -726,26 +730,79 @@ public class TypeTokenTest
 		assertEquals(typeOf(object).getTypeArgument(C).getRawType( ), Foo.class);
 	}
 	
-	@Test(enabled=false)
-	public static void arrayList( )
+	public static void arrayDeque( )
 	{
-		class Foo { }
+		class Zero { }
+		class One extends Zero { }
+		class Two extends One { }
+		class Three extends Two { }
+		class Four extends Three { }
+		class Five extends Four { }
+		class Six extends Five { }
+		class Seven extends Six { }
+		class Eight extends Seven { }
+		class Nine extends Eight { }
 		
-		class Bar extends Foo { }
+		TypeToken<ArrayDeque<Zero>> zeroDeque = new TypeToken<ArrayDeque<Zero>>( ) { };
+		TypeToken<ArrayDeque<One>> oneDeque = new TypeToken<ArrayDeque<One>>( ) { };
+		TypeToken<ArrayDeque<Two>> twoDeque = new TypeToken<ArrayDeque<Two>>( ) { };
+		TypeToken<ArrayDeque<Three>> threeDeque = new TypeToken<ArrayDeque<Three>>( ) { };
+		TypeToken<ArrayDeque<Four>> fourDeque = new TypeToken<ArrayDeque<Four>>( ) { };
+		TypeToken<ArrayDeque<Five>> fiveDeque = new TypeToken<ArrayDeque<Five>>( ) { };
+		TypeToken<ArrayDeque<Six>> sixDeque = new TypeToken<ArrayDeque<Six>>( ) { };
+		TypeToken<ArrayDeque<Seven>> sevenDeque = new TypeToken<ArrayDeque<Seven>>( ) { };
+		TypeToken<ArrayDeque<Eight>> eightDeque = new TypeToken<ArrayDeque<Eight>>( ) { };
+		TypeToken<ArrayDeque<Nine>> nineDeque = new TypeToken<ArrayDeque<Nine>>( ) { };
 		
-		class Baz extends Foo { }
+		ArrayDeque<Zero> deque = new ArrayDeque<Zero>( );
 		
-		TypeToken<List<Foo>> fooList = new TypeToken<List<Foo>>( ) { };
-		TypeToken<List<Bar>> barList = new TypeToken<List<Bar>>( ) { };
-		TypeToken<List<Baz>> bazList = new TypeToken<List<Baz>>( ) { };
+		deque.add(new One( ));
+		deque.add(new Two( ));
+		deque.add(new Three( ));
+		deque.add(new Four( ));
+		deque.add(new Five( ));
+		deque.add(new Zero( ));
+		deque.add(new Six( ));
+		deque.add(new Seven( ));
+		deque.add(new Eight( ));
+		deque.add(new Nine( ));
 		
-		ArrayList<Foo> list = new ArrayList<Foo>( );
+		assertFalse(oneDeque.isInstance(deque));
+		assertFalse(twoDeque.isInstance(deque));
+		assertFalse(threeDeque.isInstance(deque));
+		assertFalse(fourDeque.isInstance(deque));
+		assertFalse(fiveDeque.isInstance(deque));
+		assertFalse(sixDeque.isInstance(deque));
+		assertFalse(sevenDeque.isInstance(deque));
+		assertFalse(eightDeque.isInstance(deque));
+		assertFalse(nineDeque.isInstance(deque));
 		
-		list.add(new Bar( ));
-		list.add(new Baz( ));
+		assertTrue(zeroDeque.isInstance(deque));
+	}
+	
+	@Test(enabled=true, groups="debug")
+	public static void unambiguousInterfaceSuperType( )	{
+		class Clazz<C>
+		{
+			@SuppressWarnings("unused")
+			C[ ] field;
+			
+			Clazz(C[ ] arg)
+			{
+				field = arg;
+			}
+		}
 		
-		assertTrue(fooList.isInstance(list));
-		assertFalse(barList.isInstance(list));
-		assertFalse(bazList.isInstance(list));
+		@SuppressWarnings("serial")
+		class Foo implements Serializable, Cloneable { }
+		
+		class Bar implements Cloneable { }
+		
+		TypeVariable<?> C = Clazz.class.getTypeParameters( )[0];
+		
+		Clazz<Cloneable> instance = new Clazz<Cloneable>(new Cloneable[ ] {new Foo( ), new Bar( )});
+		
+		assertEquals(typeOf(instance).getRawType(), Clazz.class);
+		assertEquals(typeOf(instance).getTypeArgument(C).getRawType(), Cloneable.class);
 	}
 }

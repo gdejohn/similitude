@@ -1,78 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results skipped="0" failed="0" total="28" passed="28">
+<testng-results skipped="0" failed="0" total="7" passed="7">
   <reporter-output>
   </reporter-output>
-  <suite name="Default suite" duration-ms="239" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
+  <suite name="Default suite" duration-ms="119" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
     <groups>
       <group name="debug">
-        <method signature="TypeTokenTest.stackOverflow()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="stackOverflow" class="org.gdejohn.similitude.TypeTokenTest"/>
+        <method signature="ClonerTest.covariantArrays(org.gdejohn.similitude.Cloner)[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="covariantArrays" class="org.gdejohn.similitude.ClonerTest"/>
       </group> <!-- debug -->
     </groups>
-    <test name="Default test" duration-ms="239" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-      <class name="org.gdejohn.similitude.TypeTokenTest">
-        <test-method status="PASS" signature="setLevelWarn()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="setLevelWarn" is-config="true" duration-ms="12" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
+    <test name="Default test" duration-ms="119" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
+      <class name="org.gdejohn.similitude.ClonerTest">
+        <test-method status="PASS" signature="setLevelWarn()[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="setLevelWarn" is-config="true" duration-ms="12" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
         </test-method> <!-- setLevelWarn -->
-        <test-method status="PASS" signature="array()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="array" duration-ms="17" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- array -->
-        <test-method status="PASS" signature="commonSuperType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="commonSuperType" duration-ms="6" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- commonSuperType -->
-        <test-method status="PASS" signature="enumType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="enumType" duration-ms="3" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- enumType -->
-        <test-method status="PASS" signature="genericArrayField()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="genericArrayField" duration-ms="6" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- genericArrayField -->
-        <test-method status="PASS" signature="genericArrayType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="genericArrayType" duration-ms="5" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- genericArrayType -->
-        <test-method status="PASS" signature="genericEnclosingType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="genericEnclosingType" duration-ms="5" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- genericEnclosingType -->
-        <test-method status="PASS" signature="genericMethodReturnType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="genericMethodReturnType" duration-ms="5" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- genericMethodReturnType -->
-        <test-method status="PASS" signature="genericSuperType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="genericSuperType" duration-ms="6" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- genericSuperType -->
-        <test-method status="PASS" signature="inheritedFields()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="inheritedFields" duration-ms="4" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- inheritedFields -->
-        <test-method status="PASS" signature="instanceOfGenericType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="instanceOfGenericType" duration-ms="7" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- instanceOfGenericType -->
-        <test-method status="PASS" signature="instanceOfNonGenericType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="instanceOfNonGenericType" duration-ms="2" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- instanceOfNonGenericType -->
-        <test-method status="PASS" signature="instanceOfRecursivelyDefinedType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="instanceOfRecursivelyDefinedType" duration-ms="6" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- instanceOfRecursivelyDefinedType -->
-        <test-method status="PASS" signature="instanceOfTopLevelGenericType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="instanceOfTopLevelGenericType" duration-ms="7" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- instanceOfTopLevelGenericType -->
-        <test-method status="PASS" signature="linkedList()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="linkedList" duration-ms="12" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- linkedList -->
-        <test-method status="PASS" signature="multipleParameterizations()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="multipleParameterizations" duration-ms="6" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- multipleParameterizations -->
-        <test-method status="PASS" signature="nonGenericEquality()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="nonGenericEquality" duration-ms="2" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- nonGenericEquality -->
-        <test-method status="PASS" signature="nonGenericInterfaces()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="nonGenericInterfaces" duration-ms="2" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- nonGenericInterfaces -->
-        <test-method status="PASS" signature="nonGenericObject()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="nonGenericObject" duration-ms="2" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- nonGenericObject -->
-        <test-method status="PASS" signature="nonGenericSuperType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="nonGenericSuperType" duration-ms="2" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- nonGenericSuperType -->
-        <test-method status="PASS" signature="nonGenericType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="nonGenericType" duration-ms="1" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- nonGenericType -->
-        <test-method status="PASS" signature="nonGenericTypeToString()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="nonGenericTypeToString" duration-ms="1" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- nonGenericTypeToString -->
-        <test-method status="PASS" signature="parameterizedType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="parameterizedType" duration-ms="4" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- parameterizedType -->
-        <test-method status="PASS" signature="privateConstructor()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="privateConstructor" duration-ms="3" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- privateConstructor -->
-        <test-method status="PASS" signature="recursiveGenericInterface()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="recursiveGenericInterface" duration-ms="2" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- recursiveGenericInterface -->
-        <test-method status="PASS" signature="stackOverflow()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="stackOverflow" duration-ms="39" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- stackOverflow -->
-        <test-method status="PASS" signature="setLevelDebug()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="setLevelDebug" is-config="true" duration-ms="0" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
+        <test-method status="PASS" signature="baseCases(org.gdejohn.similitude.Cloner)[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="baseCases" duration-ms="17" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[org.gdejohn.similitude.Cloner@641e9a]]>
+              </value>
+            </param>
+          </params>
+        </test-method> <!-- baseCases -->
+        <test-method status="PASS" signature="covariantArrays(org.gdejohn.similitude.Cloner)[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="covariantArrays" duration-ms="19" started-at="2012-05-19T15:33:55Z" data-provider="cloner" finished-at="2012-05-19T15:33:55Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[org.gdejohn.similitude.Cloner@1faba46]]>
+              </value>
+            </param>
+          </params>
+        </test-method> <!-- covariantArrays -->
+        <test-method status="PASS" signature="setLevelDebug()[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="setLevelDebug" is-config="true" duration-ms="0" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
         </test-method> <!-- setLevelDebug -->
-        <test-method status="PASS" signature="setLevelWarn()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="setLevelWarn" is-config="true" duration-ms="0" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
+        <test-method status="PASS" signature="setLevelWarn()[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="setLevelWarn" is-config="true" duration-ms="0" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
         </test-method> <!-- setLevelWarn -->
-        <test-method status="PASS" signature="superTypeToken()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="superTypeToken" duration-ms="2" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- superTypeToken -->
-        <test-method status="PASS" signature="treeMap()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="treeMap" duration-ms="15" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- treeMap -->
-        <test-method status="PASS" signature="wildcardType()[pri:0, instance:org.gdejohn.similitude.TypeTokenTest@120cc56]" name="wildcardType" duration-ms="5" started-at="2012-05-18T18:45:24Z" finished-at="2012-05-18T18:45:24Z">
-        </test-method> <!-- wildcardType -->
-      </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
+        <test-method status="PASS" signature="enumType(org.gdejohn.similitude.Cloner)[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="enumType" duration-ms="2" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[org.gdejohn.similitude.Cloner@19d0a1]]>
+              </value>
+            </param>
+          </params>
+        </test-method> <!-- enumType -->
+        <test-method status="PASS" signature="multidimensionalArray(org.gdejohn.similitude.Cloner)[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="multidimensionalArray" duration-ms="2" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[org.gdejohn.similitude.Cloner@121ab80]]>
+              </value>
+            </param>
+          </params>
+        </test-method> <!-- multidimensionalArray -->
+        <test-method status="PASS" signature="primitiveArray(org.gdejohn.similitude.Cloner)[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="primitiveArray" duration-ms="2" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[org.gdejohn.similitude.Cloner@76e369]]>
+              </value>
+            </param>
+          </params>
+        </test-method> <!-- primitiveArray -->
+        <test-method status="PASS" signature="selfReferentialArray(org.gdejohn.similitude.Cloner)[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="selfReferentialArray" duration-ms="1" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[org.gdejohn.similitude.Cloner@ba9340]]>
+              </value>
+            </param>
+          </params>
+        </test-method> <!-- selfReferentialArray -->
+        <test-method status="PASS" signature="stringBuilder(org.gdejohn.similitude.Cloner)[pri:0, instance:org.gdejohn.similitude.ClonerTest@132e13d]" name="stringBuilder" duration-ms="7" started-at="2012-05-19T15:33:55Z" finished-at="2012-05-19T15:33:55Z">
+          <params>
+            <param index="0">
+              <value>
+                <![CDATA[org.gdejohn.similitude.Cloner@12cc95d]]>
+              </value>
+            </param>
+          </params>
+        </test-method> <!-- stringBuilder -->
+      </class> <!-- org.gdejohn.similitude.ClonerTest -->
     </test> <!-- Default test -->
   </suite> <!-- Default suite -->
 </testng-results>

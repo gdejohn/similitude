@@ -816,6 +816,11 @@ public class TypeToken<T>
 						typeArgument = VALUES.get(OBJECT);
 						
 						LOGGER.debug("Value already encountered: {} = {}", typeArgument, OBJECT);
+						
+						if (typeArgument == null)
+						{
+							continue;
+						}
 					}
 					else
 					{
@@ -823,18 +828,9 @@ public class TypeToken<T>
 						
 						typeArgument = typeOf(OBJECT, VALUES);
 						
-						LOGGER.debug("Values before: {}", VALUES);
-						
 						VALUES.put(OBJECT, typeArgument);
 						
-						LOGGER.debug("Values after: {}", VALUES);
-						
 						LOGGER.debug("Value added: {} = {}", typeArgument, OBJECT);
-					}
-
-					if (typeArgument == null)
-					{
-						continue;
 					}
 					
 					for (final TypeVariable<?> TYPE_PARAMETER : TRACE)
@@ -849,18 +845,6 @@ public class TypeToken<T>
 					}
 					
 					TYPE_ARGUMENTS.add(typeArgument);
-					
-					/*if (typeArgument != null)
-					{
-						TYPE_ARGUMENTS.add(typeArgument);
-					}
-					else
-					{
-						throw
-						(
-							new RuntimeException("Null type argument.")
-						);
-					}*/
 				}
 			}
 		}
@@ -869,16 +853,11 @@ public class TypeToken<T>
 		{
 			LOGGER.debug("Type arguments empty.");
 			
-			return null; /*
-			
-			throw
-			(
-				new RuntimeException("Type argument couldn't be determined.")
-			); */
+			return null;
 		}
 		else
 		{
-			LOGGER.debug("Type arguments not empty: {}", TYPE_ARGUMENTS);
+			LOGGER.debug("Type arguments: {}", TYPE_ARGUMENTS);
 			
 			final Iterator<TypeToken<?>> ITERATOR = TYPE_ARGUMENTS.iterator( );
 			
@@ -1221,6 +1200,16 @@ public class TypeToken<T>
 		throw new RuntimeException("Type variable not found.");
 	}
 	
+	private static Set<TypeToken<?>> getAllInheritedInterfaces(final Set<TypeToken<?>> INTERFACES)
+	{
+		for (final TypeToken<?> INTERFACE : INTERFACES)
+		{
+			INTERFACES.addAll(INTERFACE.getInterfaces( ));
+		}
+		
+		return INTERFACES;
+	}
+	
 	/**
 	 * Gets the common super type of {@code this} and a given type.
 	 * 
@@ -1248,8 +1237,54 @@ public class TypeToken<T>
 				
 				if (type.isAssignableFrom(THAT))
 				{
+					break;
+				}
+			}
+			
+			final Set<TypeToken<?>> INTERFACES =
+			(
+				getAllInheritedInterfaces
+				(
+					new LinkedHashSet<TypeToken<?>>(this.getInterfaces( ))
+				)
+			);
+			
+			INTERFACES.retainAll
+			(
+				getAllInheritedInterfaces
+				(
+					new LinkedHashSet<TypeToken<?>>(THAT.getInterfaces( ))
+				)
+			);
+			
+			if (INTERFACES.isEmpty( ))
+			{
+				return type;
+			}
+			else if (INTERFACES.size( ) == 1)
+			{
+				final TypeToken<?> INTERFACE = INTERFACES.iterator( ).next( );
+				
+				if (INTERFACE.isAssignableFrom(type))
+				{
 					return type;
 				}
+				else
+				{
+					return INTERFACE;
+				}
+			}
+			else
+			{
+				LOGGER.debug
+				(
+					"Super class: {}, common interfaces: {}", type, INTERFACES
+				);
+				
+				throw
+				(
+					new UnsupportedOperationException("Ambiguous supertype.")
+				);
 			}
 		}
 	}
@@ -1369,7 +1404,7 @@ public class TypeToken<T>
 		}
 	}
 	
-	static Set<Field> getAllInstanceFields(Class<?> type)
+	private static Set<Field> getAllInstanceFields(Class<?> type)
 	{
 		final Set<Field> INSTANCE_FIELDS = new LinkedHashSet<Field>( );
 		

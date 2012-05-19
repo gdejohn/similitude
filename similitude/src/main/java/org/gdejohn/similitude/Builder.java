@@ -26,7 +26,7 @@ import org.slf4j.Logger;
  */
 public final class Builder
 {
-	static final Logger LOGGER = getLogger(Builder.class);
+	private static final Logger LOGGER = getLogger(Builder.class);
 	
 	/**
 	 * Primitive types mapped to their respective wrapper types.
