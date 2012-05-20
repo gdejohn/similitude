@@ -413,12 +413,12 @@ public class TypeTokenTest
 		class Bar extends Foo { }
 		
 		TypeToken<Bar> bar = typeOf(Bar.class);
-		TypeToken<?> foo = bar.getSuperType( );
-		TypeToken<?> object = foo.getSuperType( );
+		TypeToken<?> foo = bar.getSuperClass( );
+		TypeToken<?> object = foo.getSuperClass( );
 		
 		assertEquals(foo.getRawType( ), Foo.class);
 		assertEquals(object.getRawType( ), Object.class);
-		assertNull(object.getSuperType( ));
+		assertNull(object.getSuperClass( ));
 	}
 	
 	public static void genericSuperType( )
@@ -435,10 +435,10 @@ public class TypeTokenTest
 		TypeVariable<?> T = Set.class.getTypeParameters( )[0];
 		
 		TypeToken<Baz<Integer>> baz = new TypeToken<Baz<Integer>>( ) { };
-		TypeToken<?> bar = baz.getSuperType( );
-		TypeToken<?> foo = bar.getSuperType( );
+		TypeToken<?> bar = baz.getSuperClass( );
+		TypeToken<?> foo = bar.getSuperClass( );
 		TypeToken<?> fooF = foo.getTypeArgument(F);
-		TypeToken<?> object = foo.getSuperType( );
+		TypeToken<?> object = foo.getSuperClass( );
 
 		assertEquals(bar.getRawType( ), Bar.class);
 		assertEquals(bar.getTypeArgument(R).getRawType( ), Integer.class);
@@ -447,7 +447,7 @@ public class TypeTokenTest
 		assertEquals(fooF.getRawType( ), Set.class);
 		assertEquals(fooF.getTypeArgument(T).getRawType( ), String[ ].class);
 		assertEquals(object.getRawType( ), Object.class);
-		assertNull(object.getSuperType( ));
+		assertNull(object.getSuperClass( ));
 		assertEquals(bar.getTypeArgument(E).getRawType( ), Integer.class);
 		assertEquals(bar.getTypeArgument(F).getRawType( ), Set.class);
 	}
@@ -473,12 +473,12 @@ public class TypeTokenTest
 		TypeToken<?> third = iterator.next( );
 		
 		assertEquals(third.getRawType( ), IThird.class);
-		assertNull(third.getSuperType( ));
+		assertNull(third.getSuperClass( ));
 		
 		TypeToken<?> fourth = iterator.next( );
 		
 		assertEquals(fourth.getRawType( ), IFourth.class);
-		assertNull(fourth.getSuperType( ));
+		assertNull(fourth.getSuperClass( ));
 		
 		iterator = third.getInterfaces( ).iterator( );
 		

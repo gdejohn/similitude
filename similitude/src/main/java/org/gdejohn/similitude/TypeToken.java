@@ -65,7 +65,7 @@ public class TypeToken<T>
 	
 	private final TypeToken<?> ENCLOSING_TYPE;
 	
-	private final TypeToken<?> SUPER_TYPE;
+	private final TypeToken<?> SUPER_CLASS;
 	
 	private final Set<TypeToken<?>> INTERFACES;
 	
@@ -104,7 +104,7 @@ public class TypeToken<T>
 				
 				this.ENCLOSING_TYPE = TYPE_TOKEN.getEnclosingType( );
 				
-				this.SUPER_TYPE = TYPE_TOKEN.getSuperType( );
+				this.SUPER_CLASS = TYPE_TOKEN.getSuperClass( );
 				
 				this.INTERFACES = TYPE_TOKEN.getInterfaces( );
 				
@@ -135,7 +135,7 @@ public class TypeToken<T>
 		{
 			CALLERS.put(this, this);
 			
-			this.SUPER_TYPE =
+			this.SUPER_CLASS =
 			(
 				typeOf(RAW_TYPE.getGenericSuperclass( ), this, CALLERS)
 			);
@@ -1104,13 +1104,13 @@ public class TypeToken<T>
 	}
 	
 	/**
-	 * Gets {@code this} type's super type, if it exists.
+	 * Gets {@code this} type's super class, if it exists.
 	 * 
-	 * @return The super type, or {@code null} if it doesn't exist.
+	 * @return The super class, or {@code null} if it doesn't exist.
 	 */
-	public final TypeToken<?> getSuperType( )
+	public final TypeToken<?> getSuperClass( )
 	{
-		return SUPER_TYPE;
+		return SUPER_CLASS;
 	}
 	
 	/**
@@ -1145,10 +1145,10 @@ public class TypeToken<T>
 	 * Gets the type argument for a given type variable.
 	 * 
 	 * The given type variable may be declared directly by {@code this} type,
-	 * by an in-scope enclosing type, a super type, or a directly or indirectly
-	 * implemented interface.
+	 * by an in-scope enclosing type, a super class, or a directly or
+	 * indirectly implemented interface.
 	 * 
-	 * @param TYPE_VARIABLE A type parameter declared by {@code this} type, its enclosing type, or its super types.
+	 * @param TYPE_VARIABLE A type parameter declared by {@code this} type, an enclosing type, a superclass, or an implemented interface.
 	 * 
 	 * @return The type argument corresponding to {@code TYPE_VARIABLE}.
 	 */
@@ -1171,11 +1171,11 @@ public class TypeToken<T>
 			}
 		}
 		
-		if (SUPER_TYPE != null)
+		if (SUPER_CLASS != null)
 		{
 			try
 			{
-				return SUPER_TYPE.getTypeArgument(TYPE_VARIABLE);
+				return SUPER_CLASS.getTypeArgument(TYPE_VARIABLE);
 			}
 			catch (final RuntimeException e)
 			{
@@ -1233,7 +1233,7 @@ public class TypeToken<T>
 			
 			while (true)
 			{
-				type = type.getSuperType( );
+				type = type.getSuperClass( );
 				
 				if (type.isAssignableFrom(THAT))
 				{
