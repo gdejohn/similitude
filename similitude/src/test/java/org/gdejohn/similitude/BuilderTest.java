@@ -86,7 +86,6 @@ public class BuilderTest
 		assertEquals(array.length, 0);
 	}
 	
-	@Test(dataProvider="builder", groups="debug")
 	public static void testInterface(Builder builder)
 	{
 		List<String> list = builder.instantiate(new TypeToken<List<String>>( ) { });

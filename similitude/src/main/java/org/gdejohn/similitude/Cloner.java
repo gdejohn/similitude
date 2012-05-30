@@ -29,7 +29,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 
 /**
- * Deep copy instances of arbitrary types.
+ * Deep copy instances of arbitrary classes.
  * 
  * @author Griffin DeJohn
  */

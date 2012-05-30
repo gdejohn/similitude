@@ -181,7 +181,6 @@ public class ClonerTest
 		assertEquals(clone.toString( ), original.toString( ));
 	}
 	
-	@Test(dataProvider="cloner", groups="debug")
 	public static void covariantArrays(Cloner cloner)
 	{
 		class ArrayField

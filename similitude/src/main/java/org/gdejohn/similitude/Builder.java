@@ -20,7 +20,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 
 /**
- * Instantiate arbitrary classes.
+ * Instantiate arbitrary types.
  * 
  * @author Griffin DeJohn
  */
@@ -103,11 +103,10 @@ public final class Builder
 	 * 
 	 * @return The wrapper corresponding to {@code PRIMITIVE}.
 	 */
-	static <T> TypeToken<T>	getWrapper(final TypeToken<T> PRIMITIVE)
+	private static <T> TypeToken<T>	getWrapper(final TypeToken<T> PRIMITIVE)
 	{
 		/*
-		 * Mappings are only added to WRAPPERS if they would allow this cast to
-		 * succeed.
+		 * Mappings are only added to WRAPPERS if this cast is appropriate.
 		 */
 		@SuppressWarnings("unchecked")
 		final TypeToken<T> WRAPPER = (TypeToken<T>)WRAPPERS.get(PRIMITIVE);

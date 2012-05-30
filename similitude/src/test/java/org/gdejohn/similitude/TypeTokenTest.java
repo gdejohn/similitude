@@ -545,6 +545,38 @@ public class TypeTokenTest
 		assertFalse(comparableNumber.isInstance(instance));
 	}
 	
+	public static void instanceOfInnerClassSubType( ) throws Exception
+	{
+		class Outer<O>
+		{
+			@SuppressWarnings("unused")
+			O field;
+			
+			Outer(O arg)
+			{
+				field = arg;
+			}
+			
+			class Inner { }
+		}
+		
+		class Sub<S> extends Outer<S>.Inner
+		{
+			Sub(Outer<S> arg)
+			{
+				arg.super( );
+			}
+		}
+		
+		TypeToken<Outer<CharSequence>.Inner> outerCharSequenceInner = new TypeToken<Outer<CharSequence>.Inner>( ) { };
+		TypeToken<Outer<Number>.Inner> outerNumberInner = new TypeToken<Outer<Number>.Inner>( ) { };
+		
+		Sub<String> instance = new Sub<String>(new Outer<String>("xyzzy"));
+		
+		assertTrue(outerCharSequenceInner.isInstance(instance));
+		assertFalse(outerNumberInner.isInstance(instance));
+	}
+	
 	public static void commonSuperType( )
 	{
 		class Foo { }
@@ -781,7 +813,8 @@ public class TypeTokenTest
 	}
 	
 	@Test(enabled=true, groups="debug")
-	public static void unambiguousInterfaceSuperType( )	{
+	public static void unambiguousInterfaceSuperType( )
+	{
 		class Clazz<C>
 		{
 			@SuppressWarnings("unused")
