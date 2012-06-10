@@ -12,7 +12,10 @@ import static java.lang.Long.valueOf;
 import static java.lang.Short.valueOf;
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static org.slf4j.LoggerFactory.getLogger;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 
 import java.util.Arrays;
 
@@ -28,24 +31,25 @@ import ch.qos.logback.classic.Logger;
 @SuppressWarnings("javadoc")
 public class ClonerTest
 {
-	private static final Logger ROOT_LOGGER =
-	(
-		(Logger)getLogger(ROOT_LOGGER_NAME)
-	);
+	@BeforeClass
+	@SuppressWarnings("unused")
+	private static void setRootLevelWarn( )
+	{
+		((Logger)getLogger(ROOT_LOGGER_NAME)).setLevel(WARN);
+	}
 	
 	@BeforeGroups(groups="debug")
 	@SuppressWarnings("unused")
 	private static void setLevelDebug( )
 	{
-		ROOT_LOGGER.setLevel(DEBUG);
+		((Logger)Cloner.LOGGER).setLevel(DEBUG);
 	}
 	
-	@BeforeClass
 	@AfterGroups(alwaysRun=true, groups="debug")
 	@SuppressWarnings("unused")
 	private static void setLevelWarn( )
 	{
-		ROOT_LOGGER.setLevel(WARN);
+		((Logger)Cloner.LOGGER).setLevel(WARN);
 	}
 	
 	@DataProvider
@@ -203,10 +207,7 @@ public class ClonerTest
 			{
 				if (that instanceof ArrayField)
 				{
-					return
-					(
-						Arrays.equals(this.numArray, ((ArrayField)that).numArray)
-					);
+					return Arrays.equals(this.numArray, ((ArrayField)that).numArray);
 				}
 				else
 				{

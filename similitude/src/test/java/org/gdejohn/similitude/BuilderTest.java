@@ -12,7 +12,9 @@ import static java.lang.Long.valueOf;
 import static java.lang.Short.valueOf;
 import static org.slf4j.Logger.ROOT_LOGGER_NAME;
 import static org.slf4j.LoggerFactory.getLogger;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
 
 import java.util.List;
 
@@ -28,24 +30,25 @@ import ch.qos.logback.classic.Logger;
 @SuppressWarnings("javadoc")
 public class BuilderTest
 {
-	private static final Logger ROOT_LOGGER =
-	(
-		(Logger)getLogger(ROOT_LOGGER_NAME)
-	);
+	@BeforeClass
+	@SuppressWarnings("unused")
+	private static void setRootLevelWarn( )
+	{
+		((Logger)getLogger(ROOT_LOGGER_NAME)).setLevel(WARN);
+	}
 	
 	@BeforeGroups(groups="debug")
 	@SuppressWarnings("unused")
 	private static void setLevelDebug( )
 	{
-		ROOT_LOGGER.setLevel(DEBUG);
+		((Logger)Builder.LOGGER).setLevel(DEBUG);
 	}
 	
-	@BeforeClass
 	@AfterGroups(alwaysRun=true, groups="debug")
 	@SuppressWarnings("unused")
 	private static void setLevelWarn( )
 	{
-		ROOT_LOGGER.setLevel(WARN);
+		((Logger)Builder.LOGGER).setLevel(WARN);
 	}
 	
 	@DataProvider

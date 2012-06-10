@@ -3,12 +3,14 @@
 <suite name="Failed suite [Default suite]">
   <test name="Default test(failed)" preserve-order="true">
     <classes>
-      <class name="org.gdejohn.similitude.TypeTokenTest">
+      <class name="org.gdejohn.similitude.ClonerTest">
         <methods>
-          <include name="instanceOfInnerClassSubType"/>
+          <include name="setLevelDebug"/>
+          <include name="testListOfStrings" invocation-numbers="0"/>
+          <include name="setRootLevelWarn"/>
           <include name="setLevelWarn"/>
         </methods>
-      </class> <!-- org.gdejohn.similitude.TypeTokenTest -->
+      </class> <!-- org.gdejohn.similitude.ClonerTest -->
     </classes>
   </test> <!-- Default test(failed) -->
 </suite> <!-- Failed suite [Default suite] -->

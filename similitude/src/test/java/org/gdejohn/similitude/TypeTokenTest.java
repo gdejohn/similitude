@@ -40,24 +40,25 @@ import ch.qos.logback.classic.Logger;
 @SuppressWarnings("javadoc")
 public class TypeTokenTest
 {
-	private static final Logger ROOT_LOGGER =
-	(
-		(Logger)getLogger(ROOT_LOGGER_NAME)
-	);
+	@BeforeClass
+	@SuppressWarnings("unused")
+	private static void setRootLevelWarn( )
+	{
+		((Logger)getLogger(ROOT_LOGGER_NAME)).setLevel(WARN);
+	}
 	
 	@BeforeGroups(groups="debug")
 	@SuppressWarnings("unused")
 	private static void setLevelDebug( )
 	{
-		ROOT_LOGGER.setLevel(DEBUG);
+		((Logger)TypeToken.LOGGER).setLevel(DEBUG);
 	}
 	
-	@BeforeClass
 	@AfterGroups(alwaysRun=true, groups="debug")
 	@SuppressWarnings("unused")
 	private static void setLevelWarn( )
 	{
-		ROOT_LOGGER.setLevel(WARN);
+		((Logger)TypeToken.LOGGER).setLevel(WARN);
 	}
 	
 	public static void nonGenericType( )

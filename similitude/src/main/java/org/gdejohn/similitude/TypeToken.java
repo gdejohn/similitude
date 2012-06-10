@@ -44,17 +44,18 @@ import org.slf4j.Logger;
  */
 public class TypeToken<T>
 {
-	private static final Logger LOGGER = getLogger(TypeToken.class);
+	static final Logger LOGGER = getLogger(TypeToken.class);
 	
-	private static final Map<TypeVariable<?>, TypeToken<?>> NO_TYPE_ARGUMENTS =
-	(
-		emptyMap( )
-	);
+	private static final Map<TypeVariable<?>, TypeToken<?>> NO_TYPE_ARGUMENTS;
 	
-	private static final Map<Type, List<Object>> NO_PARAMETERIZATIONS =
-	(
-		emptyMap( )
-	);
+	private static final Map<Type, List<Object>> NO_PARAMETERIZATIONS;
+	
+	static
+	{
+		NO_TYPE_ARGUMENTS = emptyMap( );
+		
+		NO_PARAMETERIZATIONS = emptyMap( );
+	}
 	
 	private static final Set<TypeToken<?>> NO_INTERFACES = emptySet( );
 	
@@ -383,38 +384,29 @@ public class TypeToken<T>
 		}
 	}
 	
-	private static Type getEnclosingInstanceType(final Class<?> START, final Class<?> TARGET)
+	private static Type getGenericEnclosingType(Class<?> clazz, final Class<?> TARGET)
 	{
-		Class<?> superCurrent = START;
-		
-		Class<?> superNext;
-		
-		Class<?> enclosingCurrent;
-		
-		Class<?> enclosingNext;
-		
-		Type ownerCurrent;
-		
-		Type ownerNext;
-		
 		while (true)
 		{
-			superNext = superCurrent.getSuperclass( );
+			final Class<?> SUPER_NEXT = clazz.getSuperclass( );
 			
-			if (superNext == null)
+			if (SUPER_NEXT == null)
 			{
 				break;
 			}
 			
-			enclosingCurrent = superNext;
+			Class<?> enclosingCurrent = SUPER_NEXT;
 			
-			ownerCurrent = superCurrent.getGenericSuperclass( );
+			Type ownerCurrent = clazz.getGenericSuperclass( );
 			
 			while (isStatic(enclosingCurrent.getModifiers( )) == false)
 			{
-				enclosingNext = enclosingCurrent.getEnclosingClass( );
+				final Class<?> ENCLOSING_NEXT =
+				(
+					enclosingCurrent.getEnclosingClass( )
+				);
 				
-				if (enclosingNext == null)
+				if (ENCLOSING_NEXT == null)
 				{
 					break;
 				}
@@ -422,20 +414,20 @@ public class TypeToken<T>
 				{
 					if(ownerCurrent instanceof ParameterizedType)
 					{
-						ownerNext =
+						final Type OWNER_NEXT =
 						(
 							((ParameterizedType)ownerCurrent).getOwnerType( )
 						);
 						
-						if (enclosingNext.equals(TARGET))
+						if (ENCLOSING_NEXT.equals(TARGET))
 						{
-							return ownerNext;
+							return OWNER_NEXT;
 						}
 						else
 						{
-							enclosingCurrent = enclosingNext;
+							enclosingCurrent = ENCLOSING_NEXT;
 							
-							ownerCurrent = ownerNext;
+							ownerCurrent = OWNER_NEXT;
 						}
 					}
 					else
@@ -445,10 +437,58 @@ public class TypeToken<T>
 				}
 			}
 			
-			superCurrent = superNext;
+			clazz = SUPER_NEXT;
 		}
 		
 		throw new RuntimeException("Owner type not found.");
+	}
+	
+	private static TypeToken<?> getActualEnclosingType(final Class<?> ENCLOSING_CLASS, final Set<Field> INSTANCE_FIELDS, final Object INSTANCE, final IdentityHashMap<Object, TypeToken<?>> VALUES, final Map<Type, List<Object>> PARAMETERIZATIONS, final Map<TypeToken<?>, TypeToken<?>> CALLERS)
+	{
+		if (ENCLOSING_CLASS == null)
+		{
+			return null;
+		}
+		else if (INSTANCE_FIELDS.size( ) > 1)
+		{
+			LOGGER.debug
+			(
+				"Multiple enclosing instance fields: {}", INSTANCE_FIELDS
+			);
+			
+			throw new RuntimeException("Multiple enclosing instance fields.");
+		}
+		else
+		{
+			try
+			{
+				if (INSTANCE_FIELDS.isEmpty( ))
+				{
+					LOGGER.debug("No enclosing instance field.");
+				}
+				else
+				{
+					return
+					(
+						typeOf
+						(
+							INSTANCE_FIELDS.iterator( ).next( ).get(INSTANCE),
+							VALUES
+						)
+					);
+				}
+			}
+			catch (final IllegalAccessException e)
+			{ // Inaccessible fields shouldn't be present.
+				throw new RuntimeException(e);
+			}
+			catch (final RuntimeException e)
+			{
+				LOGGER.debug("Couldn't get type of enclosing instance.", e);
+			}
+			
+			return typeOf(ENCLOSING_CLASS, null, PARAMETERIZATIONS, CALLERS);
+		}
 	}
 	
 	private static <T> TypeToken<? extends T> typeOf(final T OBJECT, final IdentityHashMap<Object, TypeToken<?>> VALUES)
@@ -524,7 +564,7 @@ public class TypeToken<T>
 								multiMap
 								(
 									PARAMETERIZATIONS,
-									getEnclosingInstanceType
+									getGenericEnclosingType
 									(
 										RAW_TYPE, (Class<?>)FIELD_TYPE
 									),
@@ -550,7 +590,7 @@ public class TypeToken<T>
 			}
 			
 			/*
-			 * Removes FIELD unless its an enclosing instance.
+			 * Removes FIELD unless its the enclosing instance.
 			 */
 			ITERATOR.remove( );
 		}
@@ -560,80 +600,31 @@ public class TypeToken<T>
 			new LinkedHashMap<TypeToken<?>, TypeToken<?>>( )
 		);
 		
-		if (ENCLOSING_CLASS == null)
-		{
-			return
+		final TypeToken<?> ENCLOSING_TYPE =
+		(
+			getActualEnclosingType
 			(
-				typeOf
-				(
-					RAW_TYPE, null, PARAMETERIZATIONS, null, CALLERS, VALUES
-				)
-			);
-		}
-		else if (INSTANCE_FIELDS.size( ) > 1)
-		{
-			LOGGER.debug
+				ENCLOSING_CLASS,
+				INSTANCE_FIELDS,
+				OBJECT,
+				VALUES,
+				PARAMETERIZATIONS,
+				CALLERS
+			)
+		);
+		
+		return
+		(
+			typeOf
 			(
-				"Multiple enclosing instance fields: {}", INSTANCE_FIELDS
-			);
-			
-			throw new RuntimeException("Multiple enclosing instance fields.");
-		}
-		else
-		{
-			try
-			{
-				if (INSTANCE_FIELDS.isEmpty( ))
-				{
-					LOGGER.debug("No enclosing instance field.");
-				}
-				else
-				{
-					final TypeToken<?> ENCLOSING_TYPE =
-					(
-						typeOf
-						(
-							INSTANCE_FIELDS.iterator( ).next( ).get(OBJECT),
-							VALUES
-						)
-					);
-					
-					return
-					(
-						typeOf
-						(
-							RAW_TYPE,
-							null, // PARENT
-							PARAMETERIZATIONS,
-							ENCLOSING_TYPE,
-							CALLERS,
-							VALUES
-						)
-					);
-				}
-			}
-			catch (final IllegalAccessException e)
-			{ // Inaccessible fields shouldn't be present.
-				throw new RuntimeException(e);
-			}
-			catch (final RuntimeException e)
-			{
-				LOGGER.debug("");
-			}
-			
-			return
-			(
-				typeOf
-				(
-					RAW_TYPE,
-					null, // PARENT
-					PARAMETERIZATIONS,
-					typeOf(ENCLOSING_CLASS, null, PARAMETERIZATIONS, CALLERS),
-					CALLERS,
-					VALUES
-				)
-			);
-		}
+				RAW_TYPE,
+				null, // PARENT
+				PARAMETERIZATIONS,
+				ENCLOSING_TYPE,
+				CALLERS,
+				VALUES
+			)
+		);
 	}
 	
 	/**
