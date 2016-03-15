@@ -35,4 +35,4 @@ class Demo {
     }
 }
 ```
-The `TypeToken` instances in this example are constructed using anonymous subclasses to capture the type arguments, as in Gafter's Gadget.
+The `TypeToken` instances in this example are constructed using anonymous subclasses to capture the type arguments, as in [Gafter's Gadget](http://gafter.blogspot.com/2006/12/super-type-tokens.html).
