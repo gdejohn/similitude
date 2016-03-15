@@ -13,10 +13,8 @@ import org.gdejohn.similitude.TypeToken;
 import java.util.Collection;
 import java.util.LinkedList;
 
-class Demo
-{
-    public static void main(String[] args)
-    {
+class Demo {
+    public static void main(String[] args) {
         TypeToken<Collection<Number>> numberCollection = new TypeToken<Collection<Number>>(){};
         TypeToken<Collection<Double>> doubleCollection = new TypeToken<Collection<Double>>(){};
 
@@ -38,6 +36,3 @@ class Demo
 }
 ```
 The `TypeToken` instances in this example are constructed using anonymous subclasses to capture the type arguments, as in Gafter's Gadget.
-
-# Caveat emptor
-Anyone who has stumbled across this and actually wants to use it should note that it's at a very early stage. The test suite still needs a lot of work, the API is not yet stable, and until the core features are fully implemented, only the source code will be available. [Generic Deep Copy](http://www.genericdeepcopy.com/) and [Java Deep-Cloning](http://code.google.com/p/cloning/) are mature alternatives, the latter of which inspired some of the design decisions in this project.
